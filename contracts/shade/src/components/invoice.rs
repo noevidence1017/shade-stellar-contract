@@ -9,7 +9,7 @@ pub trait MerchantAccountRefund {
     fn refund(env: Env, token: Address, amount: i128, to: Address);
 }
 
-pub const MAX_REFUND_DURATION: u64 = 604_800;
+pub const MAX_REFUND_DURATION: u64 = 604_800; // 7 days
 
 pub fn create_invoice(
     env: &Env,
@@ -26,11 +26,7 @@ pub fn create_invoice(
     if !merchant::is_merchant(env, merchant_address) {
         panic_with_error!(env, ContractError::NotAuthorized);
     }
-    let merchant_id: u64 = env
-        .storage()
-        .persistent()
-        .get(&DataKey::MerchantId(merchant_address.clone()))
-        .unwrap();
+    let merchant_id: u64 = merchant::get_merchant_id(env, merchant_address);
     let invoice_count: u64 = env
         .storage()
         .persistent()
@@ -79,9 +75,7 @@ pub fn create_invoice_signed(
     signature: &BytesN<64>,
 ) -> u64 {
     // 1. Caller must be Manager or Admin
-    if !access_control::has_role(env, caller, Role::Manager)
-        && !access_control::has_role(env, caller, Role::Admin)
-    {
+    if !access_control::has_role(env, caller, Role::Manager) {
         panic_with_error!(env, ContractError::NotAuthorized);
     }
     caller.require_auth();
@@ -111,11 +105,7 @@ pub fn create_invoice_signed(
     signature_util::invalidate_nonce(env, merchant, nonce);
 
     // 6. Standard invoice creation
-    let merchant_id: u64 = env
-        .storage()
-        .persistent()
-        .get(&DataKey::MerchantId(merchant.clone()))
-        .unwrap();
+    let merchant_id: u64 = merchant::get_merchant_id(env, merchant);
 
     let invoice_count: u64 = env
         .storage()
@@ -171,11 +161,7 @@ pub fn refund_invoice(env: &Env, merchant_address: &Address, invoice_id: u64) {
 
     let invoice = get_invoice(env, invoice_id);
 
-    let merchant_id: u64 = env
-        .storage()
-        .persistent()
-        .get(&DataKey::MerchantId(merchant_address.clone()))
-        .unwrap_or_else(|| panic_with_error!(env, ContractError::NotAuthorized));
+    let merchant_id = merchant::get_merchant_id(env, merchant_address);
 
     if invoice.merchant_id != merchant_id {
         panic_with_error!(env, ContractError::NotAuthorized);
@@ -187,6 +173,8 @@ pub fn refund_invoice(env: &Env, merchant_address: &Address, invoice_id: u64) {
         if elapsed > MAX_REFUND_DURATION {
             panic_with_error!(env, ContractError::RefundPeriodExpired);
         }
+    } else {
+        panic_with_error!(env, ContractError::InvoiceNotPaid);
     }
 
     let amount_to_refund = invoice.amount - invoice.amount_refunded;

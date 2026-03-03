@@ -76,6 +76,22 @@ pub fn get_merchant(env: &Env, merchant_id: u64) -> Merchant {
         .unwrap_or_else(|| panic_with_error!(env, ContractError::MerchantNotFound))
 }
 
+pub fn get_merchant_by_address(env: &Env, merchant: &Address) -> Merchant {
+    let merchant_id = env
+        .storage()
+        .persistent()
+        .get(&DataKey::MerchantId(merchant.clone()))
+        .unwrap_or_else(|| panic_with_error!(env, ContractError::MerchantNotFound));
+    get_merchant(env, merchant_id)
+}
+
+pub fn get_merchant_id(env: &Env, merchant: &Address) -> u64 {
+    env.storage()
+        .persistent()
+        .get(&DataKey::MerchantId(merchant.clone()))
+        .unwrap_or_else(|| panic_with_error!(env, ContractError::MerchantNotFound))
+}
+
 pub fn is_merchant(env: &Env, merchant: &Address) -> bool {
     env.storage()
         .persistent()

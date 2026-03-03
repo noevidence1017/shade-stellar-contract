@@ -31,4 +31,5 @@ pub enum ContractError {
     SubscriptionNotActive = 25,
     ChargeTooEarly = 26,
     InvoiceExpired = 27,
+    InvoiceNotPaid = 28,
 }
