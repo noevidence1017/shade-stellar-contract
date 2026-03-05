@@ -69,10 +69,11 @@ fn setup_paid_invoice(
 
 #[test]
 fn test_partial_refund_single_balance_and_status() {
-    let (env, client, shade_contract_id, _admin) = setup_test();
+    let (env, client, shade_contract_id, admin) = setup_test();
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
     let token = create_test_token(&env);
+    client.add_accepted_token(&admin, &token);
     let payer = Address::generate(&env);
 
     let (invoice_id, merchant_account_id) = setup_paid_invoice(
@@ -107,10 +108,11 @@ fn test_partial_refund_single_balance_and_status() {
 
 #[test]
 fn test_partial_refund_multiple_accumulates() {
-    let (env, client, shade_contract_id, _admin) = setup_test();
+    let (env, client, shade_contract_id, admin) = setup_test();
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
     let token = create_test_token(&env);
+    client.add_accepted_token(&admin, &token);
     let payer = Address::generate(&env);
 
     let (invoice_id, merchant_account_id) = setup_paid_invoice(
@@ -141,10 +143,11 @@ fn test_partial_refund_multiple_accumulates() {
 
 #[test]
 fn test_partial_refund_full_via_partial_transitions_to_refunded() {
-    let (env, client, shade_contract_id, _admin) = setup_test();
+    let (env, client, shade_contract_id, admin) = setup_test();
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
     let token = create_test_token(&env);
+    client.add_accepted_token(&admin, &token);
     let payer = Address::generate(&env);
 
     let (invoice_id, merchant_account_id) = setup_paid_invoice(
@@ -174,10 +177,11 @@ fn test_partial_refund_full_via_partial_transitions_to_refunded() {
 #[test]
 #[should_panic(expected = "HostError: Error(Contract, #7)")]
 fn test_partial_refund_over_refund_panics() {
-    let (env, client, shade_contract_id, _admin) = setup_test();
+    let (env, client, shade_contract_id, admin) = setup_test();
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
     let token = create_test_token(&env);
+    client.add_accepted_token(&admin, &token);
     let payer = Address::generate(&env);
 
     let (invoice_id, _) = setup_paid_invoice(
@@ -198,10 +202,11 @@ fn test_partial_refund_over_refund_panics() {
 #[test]
 #[should_panic(expected = "HostError: Error(Contract, #17)")]
 fn test_partial_refund_fails_after_seven_days() {
-    let (env, client, shade_contract_id, _admin) = setup_test();
+    let (env, client, shade_contract_id, admin) = setup_test();
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
     let token = create_test_token(&env);
+    client.add_accepted_token(&admin, &token);
     let payer = Address::generate(&env);
 
     let date_paid = 0;
@@ -224,10 +229,11 @@ fn test_partial_refund_fails_after_seven_days() {
 #[test]
 #[should_panic(expected = "HostError: Error(Contract, #7)")]
 fn test_partial_refund_zero_amount_panics() {
-    let (env, client, shade_contract_id, _admin) = setup_test();
+    let (env, client, shade_contract_id, admin) = setup_test();
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
     let token = create_test_token(&env);
+    client.add_accepted_token(&admin, &token);
     let payer = Address::generate(&env);
 
     let (invoice_id, _) = setup_paid_invoice(
@@ -247,10 +253,11 @@ fn test_partial_refund_zero_amount_panics() {
 #[test]
 #[should_panic(expected = "HostError: Error(Contract, #7)")]
 fn test_partial_refund_negative_amount_panics() {
-    let (env, client, shade_contract_id, _admin) = setup_test();
+    let (env, client, shade_contract_id, admin) = setup_test();
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
     let token = create_test_token(&env);
+    client.add_accepted_token(&admin, &token);
     let payer = Address::generate(&env);
 
     let (invoice_id, _) = setup_paid_invoice(

@@ -33,10 +33,15 @@ fn build_test_message(
 ) -> alloc::vec::Vec<u8> {
     let mut msg = Bytes::new(env);
     msg.append(&contract_id.clone().to_xdr(env));
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(&merchant.clone().to_xdr(env));
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(nonce.as_ref());
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(&Bytes::from_slice(env, &amount.to_be_bytes()));
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(&token.clone().to_xdr(env));
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(&description.clone().to_xdr(env));
 
     let mut result = alloc::vec![0u8; msg.len() as usize];
@@ -114,7 +119,10 @@ fn test_create_invoice_signed_manager_success() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Signed Invoice");
     let amount: i128 = 1000;
     let nonce = create_nonce(&env);
@@ -159,7 +167,10 @@ fn test_create_invoice_signed_admin_success() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Signed Invoice by Admin");
     let amount: i128 = 5000;
     let nonce = create_nonce(&env);
@@ -195,7 +206,7 @@ fn test_create_invoice_signed_admin_success() {
 #[test]
 #[should_panic(expected = "HostError: Error(Contract, #1)")]
 fn test_create_invoice_signed_guest_unauthorized() {
-    let (env, client, contract_id, _admin) = setup_test();
+    let (env, client, contract_id, admin) = setup_test();
 
     let guest = Address::generate(&env);
     let merchant = Address::generate(&env);
@@ -205,7 +216,10 @@ fn test_create_invoice_signed_guest_unauthorized() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Unauthorized Signed Invoice");
     let nonce = create_nonce(&env);
     let signature = sign_invoice(
@@ -246,7 +260,10 @@ fn test_create_invoice_signed_operator_unauthorized() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Unauthorized Operators Invoice");
     let nonce = create_nonce(&env);
     let signature = sign_invoice(
@@ -287,7 +304,10 @@ fn test_create_invoice_signed_invalid_amount_zero() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Invalid Amount Invoice");
     let nonce = create_nonce(&env);
     // Dummy signature — validation fails before reaching signature check
@@ -321,7 +341,10 @@ fn test_create_invoice_signed_invalid_amount_negative() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Negative Amount Invoice");
     let nonce = create_nonce(&env);
     let sig_bytes: [u8; 64] = [0; 64];
@@ -340,7 +363,7 @@ fn test_create_invoice_signed_invalid_amount_negative() {
 
 /// Test Case 7: Merchant Validation - Unregistered Merchant
 #[test]
-#[should_panic(expected = "HostError: Error(Contract, #6)")]
+#[should_panic(expected = "HostError: Error(Contract, #1)")]
 fn test_create_invoice_signed_unregistered_merchant() {
     let (env, client, _contract_id, admin) = setup_test();
 
@@ -349,7 +372,10 @@ fn test_create_invoice_signed_unregistered_merchant() {
 
     let unregistered_merchant = Address::generate(&env);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Unknown Merchant Invoice");
     let nonce = create_nonce(&env);
     let sig_bytes: [u8; 64] = [0; 64];
@@ -392,7 +418,10 @@ fn test_create_invoice_signed_multiple_invoices() {
         &BytesN::from_array(&env, &keypair2.public_key_bytes),
     );
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Multi Invoice Test");
 
     let nonce1 = create_unique_nonce(&env, 1);

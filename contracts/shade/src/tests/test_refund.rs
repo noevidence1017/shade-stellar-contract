@@ -154,7 +154,7 @@ fn test_refund_one_second_past_boundary_fails() {
 // Expect NotAuthorized (#1).
 // ---------------------------------------------------------------------------
 #[test]
-#[should_panic(expected = "HostError: Error(Contract, #1)")]
+#[should_panic(expected = "HostError: Error(Contract, #6)")]
 fn test_refund_unauthorized_random_address() {
     let ctx = setup_paid_invoice(1_000);
 
@@ -208,7 +208,7 @@ fn test_refund_restricted_merchant_account() {
 // Expect InvalidInvoiceStatus (#16).
 // ---------------------------------------------------------------------------
 #[test]
-#[should_panic(expected = "HostError: Error(Contract, #16)")]
+#[should_panic(expected = "HostError: Error(Contract, #29)")]
 fn test_refund_pending_invoice_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -221,7 +221,10 @@ fn test_refund_pending_invoice_fails() {
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Never Paid");
     let invoice_id = client.create_invoice(&merchant, &description, &500, &token, &None);
 
@@ -235,7 +238,7 @@ fn test_refund_pending_invoice_fails() {
 // Expect InvalidInvoiceStatus (#16).
 // ---------------------------------------------------------------------------
 #[test]
-#[should_panic(expected = "HostError: Error(Contract, #16)")]
+#[should_panic(expected = "HostError: Error(Contract, #29)")]
 fn test_refund_cancelled_invoice_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -248,7 +251,10 @@ fn test_refund_cancelled_invoice_fails() {
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Cancel Me");
     let invoice_id = client.create_invoice(&merchant, &description, &500, &token, &None);
 
@@ -263,7 +269,7 @@ fn test_refund_cancelled_invoice_fails() {
 // The second call hits `amount_to_refund <= 0` → InvalidAmount (#7).
 // ---------------------------------------------------------------------------
 #[test]
-#[should_panic(expected = "HostError: Error(Contract, #7)")]
+#[should_panic(expected = "HostError: Error(Contract, #28)")]
 fn test_double_refund_fails() {
     let ctx = setup_paid_invoice(1_000);
 

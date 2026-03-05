@@ -51,10 +51,15 @@ fn build_test_message(
 ) -> alloc::vec::Vec<u8> {
     let mut msg = Bytes::new(env);
     msg.append(&contract_id.clone().to_xdr(env));
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(&merchant.clone().to_xdr(env));
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(nonce.as_ref());
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(&Bytes::from_slice(env, &amount.to_be_bytes()));
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(&token.clone().to_xdr(env));
+    msg.append(&Bytes::from_array(env, b"|"));
     msg.append(&description.clone().to_xdr(env));
 
     let mut result = alloc::vec![0u8; msg.len() as usize];
@@ -116,7 +121,10 @@ fn test_valid_signature() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Valid Signature Test");
     let amount: i128 = 5000;
     let nonce = create_nonce(&env, 1);
@@ -166,7 +174,10 @@ fn test_invalid_signature_tampered_amount() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Tampered Amount");
     let original_amount: i128 = 1000;
     let tampered_amount: i128 = 9999;
@@ -212,7 +223,10 @@ fn test_invalid_signature_tampered_description() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let original_desc = String::from_str(&env, "Original description");
     let tampered_desc = String::from_str(&env, "Tampered description");
     let amount: i128 = 1000;
@@ -258,7 +272,10 @@ fn test_replay_attack_same_nonce() {
     let pub_key = BytesN::from_array(&env, &keypair.public_key_bytes);
     client.set_merchant_key(&merchant, &pub_key);
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Replay Attack Test");
     let amount: i128 = 2000;
     let nonce = create_nonce(&env, 42);
@@ -322,7 +339,10 @@ fn test_wrong_merchant_signature() {
         &BytesN::from_array(&env, &keypair_b.public_key_bytes),
     );
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Wrong Merchant Test");
     let amount: i128 = 3000;
     let nonce = create_nonce(&env, 1);
@@ -365,7 +385,10 @@ fn test_no_public_key() {
     client.register_merchant(&merchant);
     // Deliberately do NOT set a merchant key
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "No Key Test");
     let amount: i128 = 1000;
     let nonce = create_nonce(&env, 1);
@@ -410,7 +433,10 @@ fn test_nonce_independence_per_merchant() {
         &BytesN::from_array(&env, &keypair_b.public_key_bytes),
     );
 
-    let token = Address::generate(&env);
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    client.add_accepted_token(&admin, &token);
     let description = String::from_str(&env, "Nonce Independence");
     let amount: i128 = 1000;
 

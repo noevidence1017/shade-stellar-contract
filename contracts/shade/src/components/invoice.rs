@@ -1,4 +1,4 @@
-use crate::components::{access_control, admin, merchant, pausable, signature_util};
+use crate::components::{access_control, admin, merchant, signature_util};
 use crate::errors::ContractError;
 use crate::events;
 use crate::types::{DataKey, Invoice, InvoiceFilter, InvoiceStatus, Role};
@@ -20,7 +20,6 @@ pub fn validate_invoice_creation(
     token: &Address,
     expires_at: Option<u64>,
 ) {
-    pausable::assert_not_paused(env);
     if amount <= 0 {
         panic_with_error!(env, ContractError::InvalidAmount);
     }
