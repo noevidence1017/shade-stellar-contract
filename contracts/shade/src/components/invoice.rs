@@ -154,9 +154,9 @@ pub fn create_invoice_draft(
     env.storage()
         .persistent()
         .set(&DataKey::InvoiceCount, &new_invoice_id);
-    
+
     // We intentionally don't emit InvoiceCreatedEvent here since it's a draft
-    
+
     new_invoice_id
 }
 
@@ -176,7 +176,7 @@ pub fn finalize_invoice(env: &Env, merchant_address: &Address, invoice_id: u64) 
     }
 
     invoice.status = InvoiceStatus::Pending;
-    
+
     env.storage()
         .persistent()
         .set(&DataKey::Invoice(invoice_id), &invoice);
