@@ -113,6 +113,23 @@ impl ShadeTrait for Shade {
         invoice_component::create_invoice(&env, &merchant, &description, amount, &token, expires_at)
     }
 
+    fn create_invoice_draft(
+        env: Env,
+        merchant: Address,
+        description: String,
+        amount: i128,
+        token: Address,
+        expires_at: Option<u64>,
+    ) -> u64 {
+        pausable_component::assert_not_paused(&env);
+        invoice_component::create_invoice_draft(&env, &merchant, &description, amount, &token, expires_at)
+    }
+
+    fn finalize_invoice(env: Env, merchant: Address, invoice_id: u64) {
+        pausable_component::assert_not_paused(&env);
+        invoice_component::finalize_invoice(&env, &merchant, invoice_id);
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn create_invoice_signed(
         env: Env,

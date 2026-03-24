@@ -108,6 +108,88 @@ pub fn create_invoice(
     new_invoice_id
 }
 
+pub fn create_invoice_draft(
+    env: &Env,
+    merchant_address: &Address,
+    description: &String,
+    amount: i128,
+    token: &Address,
+    expires_at: Option<u64>,
+) -> u64 {
+    merchant_address.require_auth();
+    validate_invoice_creation(
+        env,
+        merchant_address,
+        description,
+        amount,
+        token,
+        expires_at,
+    );
+
+    let merchant_id: u64 = merchant::get_merchant_id(env, merchant_address);
+
+    let invoice_count: u64 = env
+        .storage()
+        .persistent()
+        .get(&DataKey::InvoiceCount)
+        .unwrap_or(0);
+    let new_invoice_id = invoice_count + 1;
+    let invoice = Invoice {
+        id: new_invoice_id,
+        description: description.clone(),
+        amount,
+        token: token.clone(),
+        status: InvoiceStatus::Draft,
+        merchant_id,
+        payer: None,
+        date_created: env.ledger().timestamp(),
+        date_paid: None,
+        amount_paid: 0,
+        amount_refunded: 0,
+        expires_at,
+    };
+    env.storage()
+        .persistent()
+        .set(&DataKey::Invoice(new_invoice_id), &invoice);
+    env.storage()
+        .persistent()
+        .set(&DataKey::InvoiceCount, &new_invoice_id);
+    
+    // We intentionally don't emit InvoiceCreatedEvent here since it's a draft
+    
+    new_invoice_id
+}
+
+pub fn finalize_invoice(env: &Env, merchant_address: &Address, invoice_id: u64) {
+    merchant_address.require_auth();
+
+    let mut invoice = get_invoice(env, invoice_id);
+
+    let merchant_id: u64 = merchant::get_merchant_id(env, merchant_address);
+
+    if invoice.merchant_id != merchant_id {
+        panic_with_error!(env, ContractError::NotAuthorized);
+    }
+
+    if invoice.status != InvoiceStatus::Draft {
+        panic_with_error!(env, ContractError::InvalidInvoiceStatus);
+    }
+
+    invoice.status = InvoiceStatus::Pending;
+    
+    env.storage()
+        .persistent()
+        .set(&DataKey::Invoice(invoice_id), &invoice);
+
+    events::publish_invoice_created_event(
+        env,
+        invoice_id,
+        merchant_address.clone(),
+        invoice.amount,
+        invoice.token.clone(),
+    );
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn create_invoice_signed(
     env: &Env,

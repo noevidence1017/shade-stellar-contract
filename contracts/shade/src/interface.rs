@@ -30,6 +30,15 @@ pub trait ShadeTrait {
         token: Address,
         expires_at: Option<u64>,
     ) -> u64;
+    fn create_invoice_draft(
+        env: Env,
+        merchant: Address,
+        description: String,
+        amount: i128,
+        token: Address,
+        expires_at: Option<u64>,
+    ) -> u64;
+    fn finalize_invoice(env: Env, merchant: Address, invoice_id: u64);
     #[allow(clippy::too_many_arguments)]
     fn create_invoice_signed(
         env: Env,

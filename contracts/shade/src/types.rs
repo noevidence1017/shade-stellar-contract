@@ -74,6 +74,7 @@ pub enum InvoiceStatus {
     Refunded = 3,
     PartiallyRefunded = 4,
     PartiallyPaid = 5,
+    Draft = 6,
 }
 
 #[contracttype]
