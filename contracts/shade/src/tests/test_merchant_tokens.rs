@@ -52,8 +52,12 @@ fn test_merchant_sets_and_gets_tokens() {
     client.register_merchant(&merchant);
 
     let token_admin = Address::generate(&env);
-    let token1 = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
-    let token2 = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
+    let token1 = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
+    let token2 = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
 
     // Add tokens to global whitelist first
     client.add_accepted_token(&admin, &token1);
@@ -92,7 +96,8 @@ fn test_merchant_cannot_set_unaccepted_global_token() {
     tokens.push_back(token);
 
     let result = client.try_set_merchant_accepted_tokens(&merchant, &tokens);
-    let expected_error = soroban_sdk::Error::from_contract_error(ContractError::TokenNotAccepted as u32);
+    let expected_error =
+        soroban_sdk::Error::from_contract_error(ContractError::TokenNotAccepted as u32);
     assert!(matches!(result, Err(Ok(err)) if err == expected_error));
 }
 
@@ -111,8 +116,12 @@ fn test_invoice_creation_with_merchant_whitelist() {
     client.register_merchant(&merchant);
 
     let token_admin = Address::generate(&env);
-    let token1 = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
-    let token2 = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
+    let token1 = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
+    let token2 = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
 
     client.add_accepted_token(&admin, &token1);
     client.add_accepted_token(&admin, &token2);
@@ -123,11 +132,24 @@ fn test_invoice_creation_with_merchant_whitelist() {
     client.set_merchant_accepted_tokens(&merchant, &tokens);
 
     // Invoice with token1 should succeed
-    client.create_invoice(&merchant, &String::from_str(&env, "Test"), &1000, &token1, &None);
+    client.create_invoice(
+        &merchant,
+        &String::from_str(&env, "Test"),
+        &1000,
+        &token1,
+        &None,
+    );
 
     // Invoice with token2 should fail (globally accepted but not by merchant)
-    let result = client.try_create_invoice(&merchant, &String::from_str(&env, "Test"), &1000, &token2, &None);
-    let expected_error = soroban_sdk::Error::from_contract_error(ContractError::TokenNotAcceptedByMerchant as u32);
+    let result = client.try_create_invoice(
+        &merchant,
+        &String::from_str(&env, "Test"),
+        &1000,
+        &token2,
+        &None,
+    );
+    let expected_error =
+        soroban_sdk::Error::from_contract_error(ContractError::TokenNotAcceptedByMerchant as u32);
     assert!(matches!(result, Err(Ok(err)) if err == expected_error));
 }
 
@@ -145,11 +167,19 @@ fn test_empty_merchant_whitelist_defaults_to_global() {
     let merchant = Address::generate(&env);
     client.register_merchant(&merchant);
 
-    let token = env.register_stellar_asset_contract_v2(Address::generate(&env)).address();
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
     client.add_accepted_token(&admin, &token);
 
     // Merchant hasn't set a whitelist, so any global token should work
-    client.create_invoice(&merchant, &String::from_str(&env, "Test"), &1000, &token, &None);
+    client.create_invoice(
+        &merchant,
+        &String::from_str(&env, "Test"),
+        &1000,
+        &token,
+        &None,
+    );
 }
 
 #[test]
@@ -167,6 +197,7 @@ fn test_non_merchant_cannot_set_tokens() {
     let tokens = Vec::new(&env);
 
     let result = client.try_set_merchant_accepted_tokens(&non_merchant, &tokens);
-    let expected_error = soroban_sdk::Error::from_contract_error(ContractError::MerchantNotFound as u32);
+    let expected_error =
+        soroban_sdk::Error::from_contract_error(ContractError::MerchantNotFound as u32);
     assert!(matches!(result, Err(Ok(err)) if err == expected_error));
 }
