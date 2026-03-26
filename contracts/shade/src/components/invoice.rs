@@ -486,6 +486,13 @@ pub fn refund_invoice_partial(env: &Env, invoice_id: u64, amount: i128) {
     }
 }
 
+pub fn pay_invoices_batch(env: &Env, payer: &Address, invoice_ids: &Vec<u64>) {
+    payer.require_auth();
+    for invoice_id in invoice_ids.iter() {
+        pay_invoice(env, payer, invoice_id);
+    }
+}
+
 pub fn pay_invoice(env: &Env, payer: &Address, invoice_id: u64) -> i128 {
     let invoice = get_invoice(env, invoice_id);
     if invoice.status != InvoiceStatus::Pending && invoice.status != InvoiceStatus::PartiallyPaid {
