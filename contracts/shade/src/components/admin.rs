@@ -142,6 +142,12 @@ pub fn propose_admin_transfer(env: &Env, admin: &Address, new_admin: &Address) {
     env.storage()
         .persistent()
         .set(&DataKey::PendingAdmin, new_admin);
+    events::publish_admin_transfer_proposed_event(
+        env,
+        admin.clone(),
+        new_admin.clone(),
+        env.ledger().timestamp(),
+    );
 }
 
 pub fn accept_admin_transfer(env: &Env, new_admin: &Address) {
@@ -156,8 +162,15 @@ pub fn accept_admin_transfer(env: &Env, new_admin: &Address) {
         panic_with_error!(env, ContractError::NotAuthorized);
     }
 
+    let old_admin: Address = core::get_admin(env);
     env.storage().persistent().set(&DataKey::Admin, new_admin);
     env.storage().persistent().remove(&DataKey::PendingAdmin);
+    events::publish_admin_transfer_accepted_event(
+        env,
+        old_admin,
+        new_admin.clone(),
+        env.ledger().timestamp(),
+    );
 }
 
 fn get_accepted_tokens(env: &Env) -> Vec<Address> {

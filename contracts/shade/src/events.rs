@@ -637,3 +637,47 @@ pub fn publish_merchant_token_removed_event(
     }
     .publish(env);
 }
+
+// ── Admin transfer events ────────────────────────────────────────────────────
+
+#[contractevent]
+pub struct AdminTransferProposedEvent {
+    pub current_admin: Address,
+    pub proposed_admin: Address,
+    pub timestamp: u64,
+}
+
+pub fn publish_admin_transfer_proposed_event(
+    env: &Env,
+    current_admin: Address,
+    proposed_admin: Address,
+    timestamp: u64,
+) {
+    AdminTransferProposedEvent {
+        current_admin,
+        proposed_admin,
+        timestamp,
+    }
+    .publish(env);
+}
+
+#[contractevent]
+pub struct AdminTransferAcceptedEvent {
+    pub old_admin: Address,
+    pub new_admin: Address,
+    pub timestamp: u64,
+}
+
+pub fn publish_admin_transfer_accepted_event(
+    env: &Env,
+    old_admin: Address,
+    new_admin: Address,
+    timestamp: u64,
+) {
+    AdminTransferAcceptedEvent {
+        old_admin,
+        new_admin,
+        timestamp,
+    }
+    .publish(env);
+}
