@@ -38,4 +38,6 @@ pub enum ContractError {
     MerchantNotActive = 32,
     InvalidDescription = 33,
     TokenNotAcceptedByMerchant = 41,
+    FeeUpdateTooEarly = 42,
+    NoPendingFeeUpdate = 43,
 }

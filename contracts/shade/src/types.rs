@@ -28,6 +28,8 @@ pub enum DataKey {
     Subscription(u64),
     PlanCount,
     SubscriptionCount,
+    // --- Time-locked fee updates ---
+    PendingTokenFee(Address),
 }
 
 #[contracttype]
@@ -101,6 +103,16 @@ pub enum Role {
     Admin,
     Manager,
     Operator,
+}
+
+// ── Time-locked fee update ────────────────────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PendingFee {
+    pub token: Address,
+    pub fee: i128,
+    pub proposed_at: u64,
 }
 
 // ── Subscription engine ───────────────────────────────────────────────────────
