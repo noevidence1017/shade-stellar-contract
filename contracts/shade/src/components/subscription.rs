@@ -47,7 +47,7 @@ pub fn create_subscription_plan(
         panic_with_error!(env, ContractError::TokenNotAccepted);
     }
 
-    let fee_amount = admin::calculate_fee(env, &token, amount);
+    let fee_amount = admin::calculate_fee(env, &merchant, &token, amount);
     if amount < fee_amount {
         panic_with_error!(env, ContractError::InvalidAmount);
     }
@@ -141,7 +141,7 @@ pub fn charge_subscription(env: &Env, subscription_id: u64) {
         panic_with_error!(env, ContractError::ChargeTooEarly);
     }
 
-    let fee = admin::calculate_fee(env, &plan.token, plan.amount);
+    let fee = admin::calculate_fee(env, &plan.merchant, &plan.token, plan.amount);
     let merchant_amount = plan.amount - fee;
 
     let token_client = token::TokenClient::new(env, &plan.token);
@@ -151,6 +151,7 @@ pub fn charge_subscription(env: &Env, subscription_id: u64) {
     token_client.transfer_from(&spender, &sub.customer, &merchant_account, &merchant_amount);
     if fee > 0 {
         token_client.transfer_from(&spender, &sub.customer, &spender, &fee);
+        admin::increment_merchant_volume(env, &plan.merchant, &plan.token, plan.amount);
     }
 
     sub.last_charged = now;

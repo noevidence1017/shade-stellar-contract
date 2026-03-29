@@ -29,7 +29,9 @@ impl ShadeTrait for Shade {
         env.storage()
             .persistent()
             .set(&DataKey::ContractInfo, &contract_info);
-        env.storage().persistent().set(&DataKey::AccountWasmHash, &account_wasm_hash);
+        env.storage()
+            .persistent()
+            .set(&DataKey::AccountWasmHash, &account_wasm_hash);
         events::publish_initialized_event(&env, admin, env.ledger().timestamp());
     }
 

@@ -45,7 +45,8 @@ pub fn validate_invoice_creation(
         }
     }
     // check if amount is less than fee amount for the token
-    let fee_amount = admin::get_fee(env, token);
+    let merchant_address_val: Address = merchant_address.clone();
+    let fee_amount = admin::calculate_fee(env, &merchant_address_val, token, amount);
     if amount <= fee_amount {
         panic_with_error!(env, ContractError::InvalidAmount);
     }
@@ -532,7 +533,8 @@ pub fn pay_invoice_partial(env: &Env, payer: &Address, invoice_id: u64, amount: 
         panic_with_error!(env, ContractError::TokenNotAccepted);
     }
 
-    let fee_amount = admin::calculate_fee(env, &invoice.token, amount);
+    let merchant_address: Address = merchant_id_to_address(env, invoice.merchant_id);
+    let fee_amount = admin::calculate_fee(env, &merchant_address, &invoice.token, amount);
     let merchant_amount = amount - fee_amount;
 
     let token_client = token::TokenClient::new(env, &invoice.token);
@@ -541,6 +543,7 @@ pub fn pay_invoice_partial(env: &Env, payer: &Address, invoice_id: u64, amount: 
     token_client.transfer(payer, &merchant_account_id, &merchant_amount);
     if fee_amount > 0 {
         token_client.transfer(payer, env.current_contract_address(), &fee_amount);
+        admin::increment_merchant_volume(env, &merchant_address, &invoice.token, amount);
     }
 
     invoice.amount_paid += amount;
@@ -662,4 +665,13 @@ pub fn amend_invoice(
         invoice.amount,
         env.ledger().timestamp(),
     );
+}
+
+fn merchant_id_to_address(env: &Env, merchant_id: u64) -> Address {
+    let merchant_data: crate::types::Merchant = env
+        .storage()
+        .persistent()
+        .get(&crate::types::DataKey::Merchant(merchant_id))
+        .unwrap_or_else(|| panic_with_error!(env, ContractError::MerchantNotFound));
+    merchant_data.address
 }

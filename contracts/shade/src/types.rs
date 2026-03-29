@@ -30,6 +30,8 @@ pub enum DataKey {
     SubscriptionCount,
     // --- Time-locked fee updates ---
     PendingTokenFee(Address),
+    // --- Fee discount system ---
+    MerchantVolume(Address, Address),
 }
 
 #[contracttype]

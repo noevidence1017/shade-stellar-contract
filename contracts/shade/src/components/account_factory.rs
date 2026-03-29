@@ -19,7 +19,7 @@ pub fn deploy_account(env: &Env, merchant: Address, merchant_id: u64) -> Address
         use soroban_sdk::testutils::Address as _;
         // Return a mock address for testing without actual deployment
         let mock_address = Address::generate(env);
-        
+
         events::publish_merchant_account_deployed_event(
             env,
             merchant,

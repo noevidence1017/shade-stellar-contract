@@ -31,12 +31,21 @@ fn setup(env: &Env) -> (Address, ShadeClient<'_>, Address) {
 fn test_calculate_fee_returns_zero_when_no_fee_set() {
     let env = Env::default();
     let (_admin, client, token) = setup(&env);
+    let merchant = Address::generate(&env);
     let contract_id = client.address.clone();
-
     env.as_contract(&contract_id, || {
-        assert_eq!(admin_component::calculate_fee(&env, &token, 0), 0);
-        assert_eq!(admin_component::calculate_fee(&env, &token, 1_000), 0);
-        assert_eq!(admin_component::calculate_fee(&env, &token, 1_000_000), 0);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 0),
+            0
+        );
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 1_000),
+            0
+        );
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 1_000_000),
+            0
+        );
     });
 }
 
@@ -46,11 +55,15 @@ fn test_calculate_fee_zero_amount() {
     let env = Env::default();
     let (admin, client, token) = setup(&env);
     let contract_id = client.address.clone();
+    let merchant = Address::generate(&env);
 
     client.set_fee(&admin, &token, &500); // 5%
 
     env.as_contract(&contract_id, || {
-        assert_eq!(admin_component::calculate_fee(&env, &token, 0), 0);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 0),
+            0
+        );
     });
 }
 
@@ -60,11 +73,15 @@ fn test_calculate_fee_5_percent() {
     let env = Env::default();
     let (admin, client, token) = setup(&env);
     let contract_id = client.address.clone();
+    let merchant = Address::generate(&env);
 
     client.set_fee(&admin, &token, &500);
 
     env.as_contract(&contract_id, || {
-        assert_eq!(admin_component::calculate_fee(&env, &token, 1_000), 50);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 1_000),
+            50
+        );
     });
 }
 
@@ -74,11 +91,15 @@ fn test_calculate_fee_1_percent() {
     let env = Env::default();
     let (admin, client, token) = setup(&env);
     let contract_id = client.address.clone();
+    let merchant = Address::generate(&env);
 
     client.set_fee(&admin, &token, &100);
 
     env.as_contract(&contract_id, || {
-        assert_eq!(admin_component::calculate_fee(&env, &token, 10_000), 100);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 10_000),
+            100
+        );
     });
 }
 
@@ -88,11 +109,15 @@ fn test_calculate_fee_10_percent() {
     let env = Env::default();
     let (admin, client, token) = setup(&env);
     let contract_id = client.address.clone();
+    let merchant = Address::generate(&env);
 
     client.set_fee(&admin, &token, &1_000);
 
     env.as_contract(&contract_id, || {
-        assert_eq!(admin_component::calculate_fee(&env, &token, 5_000), 500);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 5_000),
+            500
+        );
     });
 }
 
@@ -102,11 +127,15 @@ fn test_calculate_fee_100_percent() {
     let env = Env::default();
     let (admin, client, token) = setup(&env);
     let contract_id = client.address.clone();
+    let merchant = Address::generate(&env);
 
     client.set_fee(&admin, &token, &10_000);
 
     env.as_contract(&contract_id, || {
-        assert_eq!(admin_component::calculate_fee(&env, &token, 1_000), 1_000);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 1_000),
+            1_000
+        );
     });
 }
 
@@ -117,15 +146,25 @@ fn test_calculate_fee_truncates_fractional_result() {
     let env = Env::default();
     let (admin, client, token) = setup(&env);
     let contract_id = client.address.clone();
+    let merchant = Address::generate(&env);
 
     client.set_fee(&admin, &token, &1); // 0.01%
 
     env.as_contract(&contract_id, || {
         // Too small to produce a whole unit
-        assert_eq!(admin_component::calculate_fee(&env, &token, 1), 0);
-        assert_eq!(admin_component::calculate_fee(&env, &token, 9_999), 0);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 1),
+            0
+        );
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 9_999),
+            0
+        );
         // Exactly at the boundary: 10_000 * 1 / 10_000 = 1
-        assert_eq!(admin_component::calculate_fee(&env, &token, 10_000), 1);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 10_000),
+            1
+        );
     });
 }
 
@@ -135,17 +174,24 @@ fn test_calculate_fee_reflects_updated_fee() {
     let env = Env::default();
     let (admin, client, token) = setup(&env);
     let contract_id = client.address.clone();
+    let merchant = Address::generate(&env);
 
     client.set_fee(&admin, &token, &200); // 2%
 
     env.as_contract(&contract_id, || {
-        assert_eq!(admin_component::calculate_fee(&env, &token, 10_000), 200);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 10_000),
+            200
+        );
     });
 
     client.set_fee(&admin, &token, &500); // updated to 5%
 
     env.as_contract(&contract_id, || {
-        assert_eq!(admin_component::calculate_fee(&env, &token, 10_000), 500);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token, 10_000),
+            500
+        );
     });
 }
 
@@ -156,12 +202,13 @@ fn test_calculate_fee_large_amount() {
     let env = Env::default();
     let (admin, client, token) = setup(&env);
     let contract_id = client.address.clone();
+    let merchant = Address::generate(&env);
 
     client.set_fee(&admin, &token, &250); // 2.5%
 
     env.as_contract(&contract_id, || {
         assert_eq!(
-            admin_component::calculate_fee(&env, &token, 1_000_000_000),
+            admin_component::calculate_fee(&env, &merchant, &token, 1_000_000_000),
             25_000_000
         );
     });
@@ -173,6 +220,7 @@ fn test_calculate_fee_per_token_independence() {
     let env = Env::default();
     let (admin, client, token_a) = setup(&env);
     let contract_id = client.address.clone();
+    let merchant = Address::generate(&env);
 
     // Register a second token
     let token_b_admin = Address::generate(&env);
@@ -185,7 +233,13 @@ fn test_calculate_fee_per_token_independence() {
     client.set_fee(&admin, &token_b, &700); // 7%
 
     env.as_contract(&contract_id, || {
-        assert_eq!(admin_component::calculate_fee(&env, &token_a, 10_000), 300);
-        assert_eq!(admin_component::calculate_fee(&env, &token_b, 10_000), 700);
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token_a, 10_000),
+            300
+        );
+        assert_eq!(
+            admin_component::calculate_fee(&env, &merchant, &token_b, 10_000),
+            700
+        );
     });
 }
