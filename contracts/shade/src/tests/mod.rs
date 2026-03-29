@@ -8,6 +8,7 @@ pub mod test_calculate_fee;
 pub mod test_draft_invoice;
 pub mod test_fees;
 pub mod test_invoice;
+pub mod test_invoice_expiry;
 pub mod test_invoice_filter;
 pub mod test_invoice_partial_refund;
 pub mod test_invoice_signed;
