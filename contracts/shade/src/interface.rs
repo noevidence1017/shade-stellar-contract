@@ -75,6 +75,10 @@ pub trait ShadeTrait {
     );
     fn calculate_fee(env: Env, merchant: Address, token: Address, amount: i128) -> i128;
     fn get_merchant_volume(env: Env, merchant: Address, token: Address) -> i128;
+    fn get_daily_volume(env: Env, token: Address) -> i128;
+    fn get_weekly_volume(env: Env, token: Address) -> i128;
+    fn get_merchant_daily_volume(env: Env, merchant: Address, token: Address) -> i128;
+    fn get_merchant_weekly_volume(env: Env, merchant: Address, token: Address) -> i128;
     fn set_merchant_account(env: Env, merchant: Address, account: Address);
     fn get_merchant_account(env: Env, merchant_id: u64) -> Address;
     fn pay_invoice(env: Env, payer: Address, invoice_id: u64);

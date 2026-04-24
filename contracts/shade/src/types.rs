@@ -32,6 +32,10 @@ pub enum DataKey {
     PendingTokenFee(Address),
     // --- Fee discount system ---
     MerchantVolume(Address, Address),
+    DailyVolume(Address, u64),
+    WeeklyVolume(Address, u64),
+    MerchantDailyVolume(Address, Address, u64),
+    MerchantWeeklyVolume(Address, Address, u64),
 }
 
 #[contracttype]

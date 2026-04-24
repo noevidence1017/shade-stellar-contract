@@ -151,8 +151,8 @@ pub fn charge_subscription(env: &Env, subscription_id: u64) {
     token_client.transfer_from(&spender, &sub.customer, &merchant_account, &merchant_amount);
     if fee > 0 {
         token_client.transfer_from(&spender, &sub.customer, &spender, &fee);
-        admin::increment_merchant_volume(env, &plan.merchant, &plan.token, plan.amount);
     }
+    admin::increment_merchant_volume(env, &plan.merchant, &plan.token, plan.amount);
 
     sub.last_charged = now;
     env.storage()

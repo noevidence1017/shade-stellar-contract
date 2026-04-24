@@ -5,6 +5,8 @@ use crate::types::{DataKey, PendingFee};
 use soroban_sdk::{panic_with_error, token, Address, Env, Vec};
 
 pub const FEE_UPDATE_DELAY: u64 = 172_800; // 48 hours in seconds
+pub const DAY_IN_SECONDS: u64 = 86400;
+pub const WEEK_IN_SECONDS: u64 = 604800;
 
 // TODO: create the functionality for withdrawing revenue by admin.
 
@@ -156,6 +158,83 @@ pub fn increment_merchant_volume(env: &Env, merchant: &Address, token: &Address,
         &DataKey::MerchantVolume(merchant.clone(), token.clone()),
         &(current + amount),
     );
+
+    // Time-bucketed stats
+    let now = env.ledger().timestamp();
+    let day_bin = (now / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+    let week_bin = (now / WEEK_IN_SECONDS) * WEEK_IN_SECONDS;
+
+    // Global stats
+    let daily_key = DataKey::DailyVolume(token.clone(), day_bin);
+    let weekly_key = DataKey::WeeklyVolume(token.clone(), week_bin);
+
+    let current_daily: i128 = env.storage().persistent().get(&daily_key).unwrap_or(0);
+    let current_weekly: i128 = env.storage().persistent().get(&weekly_key).unwrap_or(0);
+
+    env.storage()
+        .persistent()
+        .set(&daily_key, &(current_daily + amount));
+    env.storage()
+        .persistent()
+        .set(&weekly_key, &(current_weekly + amount));
+
+    // Merchant time-bucketed stats
+    let m_daily_key = DataKey::MerchantDailyVolume(merchant.clone(), token.clone(), day_bin);
+    let m_weekly_key = DataKey::MerchantWeeklyVolume(merchant.clone(), token.clone(), week_bin);
+
+    let current_m_daily: i128 = env.storage().persistent().get(&m_daily_key).unwrap_or(0);
+    let current_m_weekly: i128 = env.storage().persistent().get(&m_weekly_key).unwrap_or(0);
+
+    env.storage()
+        .persistent()
+        .set(&m_daily_key, &(current_m_daily + amount));
+    env.storage()
+        .persistent()
+        .set(&m_weekly_key, &(current_m_weekly + amount));
+}
+
+pub fn get_daily_volume(env: &Env, token: &Address) -> i128 {
+    let now = env.ledger().timestamp();
+    let day_bin = (now / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+    env.storage()
+        .persistent()
+        .get(&DataKey::DailyVolume(token.clone(), day_bin))
+        .unwrap_or(0)
+}
+
+pub fn get_weekly_volume(env: &Env, token: &Address) -> i128 {
+    let now = env.ledger().timestamp();
+    let week_bin = (now / WEEK_IN_SECONDS) * WEEK_IN_SECONDS;
+    env.storage()
+        .persistent()
+        .get(&DataKey::WeeklyVolume(token.clone(), week_bin))
+        .unwrap_or(0)
+}
+
+pub fn get_merchant_daily_volume(env: &Env, merchant: &Address, token: &Address) -> i128 {
+    let now = env.ledger().timestamp();
+    let day_bin = (now / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+    env.storage()
+        .persistent()
+        .get(&DataKey::MerchantDailyVolume(
+            merchant.clone(),
+            token.clone(),
+            day_bin,
+        ))
+        .unwrap_or(0)
+}
+
+pub fn get_merchant_weekly_volume(env: &Env, merchant: &Address, token: &Address) -> i128 {
+    let now = env.ledger().timestamp();
+    let week_bin = (now / WEEK_IN_SECONDS) * WEEK_IN_SECONDS;
+    env.storage()
+        .persistent()
+        .get(&DataKey::MerchantWeeklyVolume(
+            merchant.clone(),
+            token.clone(),
+            week_bin,
+        ))
+        .unwrap_or(0)
 }
 
 fn apply_volume_discount(fee_bps: i128, volume: i128) -> i128 {

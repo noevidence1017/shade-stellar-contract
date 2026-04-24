@@ -543,8 +543,8 @@ pub fn pay_invoice_partial(env: &Env, payer: &Address, invoice_id: u64, amount: 
     token_client.transfer(payer, &merchant_account_id, &merchant_amount);
     if fee_amount > 0 {
         token_client.transfer(payer, env.current_contract_address(), &fee_amount);
-        admin::increment_merchant_volume(env, &merchant_address, &invoice.token, amount);
     }
+    admin::increment_merchant_volume(env, &merchant_address, &invoice.token, amount);
 
     invoice.amount_paid += amount;
     if let Some(existing_payer) = &invoice.payer {
