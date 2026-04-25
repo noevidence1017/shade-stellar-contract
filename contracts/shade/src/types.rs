@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, BytesN};
+use soroban_sdk::{contracttype, Address, BytesN, String};
 
 #[contracttype]
 pub enum DataKey {
@@ -33,6 +33,10 @@ pub enum DataKey {
     // --- Fee discount system ---
     MerchantVolume(Address, Address),
     UserTransactions(Address),
+    MerchantAnalytics(Address, Address),
+    MerchantAnalyticsSummary(Address),
+    PlatformAccount,
+    TokenOracle(Address),
 }
 
 #[contracttype]
@@ -68,6 +72,8 @@ pub struct Invoice {
     pub amount_paid: i128,
     pub amount_refunded: i128,
     pub expires_at: Option<u64>,
+    pub pricing_mode: InvoicePricingMode,
+    pub fiat_pricing: Option<FiatPricing>,
 }
 
 #[contracttype]
@@ -81,6 +87,22 @@ pub enum InvoiceStatus {
     PartiallyRefunded = 4,
     PartiallyPaid = 5,
     Draft = 6,
+}
+
+#[contracttype]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
+pub enum InvoicePricingMode {
+    FixedCrypto = 0,
+    FixedFiat = 1,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FiatPricing {
+    pub currency: String,
+    pub amount: i128,
+    pub decimals: u32,
 }
 
 #[contracttype]
@@ -114,6 +136,49 @@ pub enum Role {
 pub struct VolumeDiscount {
     pub min_volume: i128,
     pub discount_bps: i128,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OracleConfig {
+    pub contract: Address,
+    pub price_decimals: u32,
+    pub token_decimals: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MerchantAnalytics {
+    pub merchant: Address,
+    pub token: Address,
+    pub total_volume: i128,
+    pub total_fees: i128,
+    pub transaction_count: u64,
+    pub last_updated: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MerchantAnalyticsSummary {
+    pub merchant: Address,
+    pub total_volume: i128,
+    pub total_fees: i128,
+    pub transaction_count: u64,
+    pub last_updated: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CrossChainBridgePayload {
+    pub invoice_id: u64,
+    pub merchant: Address,
+    pub payer: Option<Address>,
+    pub source_chain: String,
+    pub destination_chain: String,
+    pub token: Address,
+    pub amount: i128,
+    pub destination_recipient: String,
+    pub memo: Option<String>,
 }
 
 // ── Time-locked fee update ────────────────────────────────────────────────────

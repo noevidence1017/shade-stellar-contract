@@ -8,8 +8,9 @@ use crate::errors::ContractError;
 use crate::events;
 use crate::interface::ShadeTrait;
 use crate::types::{
-    ContractInfo, DataKey, Invoice, InvoiceFilter, Merchant, MerchantFilter, PendingFee, Role,
-    Subscription, SubscriptionPlan, Transaction,
+    ContractInfo, CrossChainBridgePayload, DataKey, Invoice, InvoiceFilter, Merchant,
+    MerchantAnalytics, MerchantAnalyticsSummary, MerchantFilter, OracleConfig, PendingFee, Role,
+    Subscription, SubscriptionPlan, Transaction
 };
 use soroban_sdk::{contract, contractimpl, panic_with_error, Address, BytesN, Env, String, Vec};
 
@@ -27,6 +28,9 @@ impl ShadeTrait for Shade {
             timestamp: env.ledger().timestamp(),
         };
         env.storage().persistent().set(&DataKey::Admin, &admin);
+        env.storage()
+            .persistent()
+            .set(&DataKey::PlatformAccount, &admin);
         env.storage()
             .persistent()
             .set(&DataKey::ContractInfo, &contract_info);
@@ -67,6 +71,24 @@ impl ShadeTrait for Shade {
 
     fn get_fee(env: Env, token: Address) -> i128 {
         admin_component::get_fee(&env, &token)
+    }
+
+    fn set_platform_account(env: Env, admin: Address, account: Address) {
+        pausable_component::assert_not_paused(&env);
+        admin_component::set_platform_account(&env, &admin, &account);
+    }
+
+    fn get_platform_account(env: Env) -> Address {
+        admin_component::get_platform_account(&env)
+    }
+
+    fn set_token_oracle(env: Env, admin: Address, token: Address, oracle: OracleConfig) {
+        pausable_component::assert_not_paused(&env);
+        admin_component::set_token_oracle(&env, &admin, &token, &oracle);
+    }
+
+    fn get_token_oracle(env: Env, token: Address) -> OracleConfig {
+        admin_component::get_token_oracle(&env, &token)
     }
 
     fn propose_fee(env: Env, admin: Address, token: Address, fee: i128) {
@@ -128,6 +150,29 @@ impl ShadeTrait for Shade {
         invoice_component::create_invoice(&env, &merchant, &description, amount, &token, expires_at)
     }
 
+    fn create_fiat_invoice(
+        env: Env,
+        merchant: Address,
+        description: String,
+        fiat_amount: i128,
+        fiat_currency: String,
+        fiat_decimals: u32,
+        token: Address,
+        expires_at: Option<u64>,
+    ) -> u64 {
+        pausable_component::assert_not_paused(&env);
+        invoice_component::create_fiat_invoice(
+            &env,
+            &merchant,
+            &description,
+            fiat_amount,
+            &fiat_currency,
+            fiat_decimals,
+            &token,
+            expires_at,
+        )
+    }
+
     fn create_invoice_draft(
         env: Env,
         merchant: Address,
@@ -178,6 +223,10 @@ impl ShadeTrait for Shade {
 
     fn get_invoice(env: Env, invoice_id: u64) -> Invoice {
         invoice_component::get_invoice(&env, invoice_id)
+    }
+
+    fn resolve_invoice_amount(env: Env, invoice_id: u64) -> i128 {
+        invoice_component::resolve_invoice_amount(&env, invoice_id)
     }
 
     fn refund_invoice(env: Env, merchant: Address, invoice_id: u64) {
@@ -245,6 +294,14 @@ impl ShadeTrait for Shade {
 
     fn get_merchant_volume(env: Env, merchant: Address, token: Address) -> i128 {
         admin_component::get_merchant_volume(&env, &merchant, &token)
+    }
+
+    fn get_merchant_analytics(env: Env, merchant: Address, token: Address) -> MerchantAnalytics {
+        admin_component::get_merchant_analytics(&env, &merchant, &token)
+    }
+
+    fn get_merchant_analytics_summary(env: Env, merchant: Address) -> MerchantAnalyticsSummary {
+        admin_component::get_merchant_analytics_summary(&env, &merchant)
     }
 
     fn set_merchant_account(env: Env, merchant: Address, account: Address) {
@@ -358,5 +415,20 @@ impl ShadeTrait for Shade {
 
     fn get_user_transactions(env: Env, user: Address) -> Vec<Transaction> {
         history_component::get_user_transactions(&env, user)
+    }
+    
+    fn emit_cross_chain_bridge_placeholder(
+        env: Env,
+        caller: Address,
+        payload: CrossChainBridgePayload,
+    ) {
+        pausable_component::assert_not_paused(&env);
+        caller.require_auth();
+        events::publish_cross_chain_bridge_placeholder_event(
+            &env,
+            caller,
+            payload,
+            env.ledger().timestamp(),
+        );
     }
 }
