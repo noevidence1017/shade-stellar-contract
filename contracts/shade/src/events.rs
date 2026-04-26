@@ -1,4 +1,4 @@
-use soroban_sdk::{contractevent, Address, BytesN, Env, Vec};
+use soroban_sdk::{contractevent, Address, BytesN, Env, String, Vec};
 
 // ── Existing events ───────────────────────────────────────────────────────────
 
@@ -182,6 +182,30 @@ pub fn publish_merchant_verified_event(env: &Env, merchant_id: u64, status: bool
     MerchantVerifiedEvent {
         merchant_id,
         status,
+        timestamp,
+    }
+    .publish(env);
+}
+
+#[contractevent]
+pub struct MerchantWebhookSetEvent {
+    pub merchant: Address,
+    pub merchant_id: u64,
+    pub webhook: String,
+    pub timestamp: u64,
+}
+
+pub fn publish_merchant_webhook_set_event(
+    env: &Env,
+    merchant: Address,
+    merchant_id: u64,
+    webhook: String,
+    timestamp: u64,
+) {
+    MerchantWebhookSetEvent {
+        merchant,
+        merchant_id,
+        webhook,
         timestamp,
     }
     .publish(env);

@@ -23,6 +23,7 @@ pub mod test_merchant_activation;
 pub mod test_merchant_key;
 pub mod test_merchant_tokens;
 mod test_merchant_verification;
+pub mod test_merchant_webhook;
 pub mod test_pausable;
 pub mod test_payment;
 pub mod test_querying;

@@ -55,6 +55,7 @@ pub struct Merchant {
     pub verified: bool,
     pub date_registered: u64,
     pub account: Address,
+    pub webhook: String,
 }
 
 #[contracttype]

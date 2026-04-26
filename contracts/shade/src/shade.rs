@@ -395,6 +395,15 @@ impl ShadeTrait for Shade {
         subscription_component::cancel_subscription(&env, caller, subscription_id);
     }
 
+    fn set_merchant_webhook(env: Env, merchant: Address, webhook: String) {
+        pausable_component::assert_not_paused(&env);
+        merchant_component::set_merchant_webhook(&env, &merchant, &webhook);
+    }
+
+    fn get_merchant_webhook(env: Env, merchant_id: u64) -> String {
+        merchant_component::get_merchant_webhook(&env, merchant_id)
+    }
+
     fn set_merchant_accepted_tokens(env: Env, merchant: Address, tokens: Vec<Address>) {
         pausable_component::assert_not_paused(&env);
         merchant_component::set_merchant_accepted_tokens(&env, &merchant, &tokens);

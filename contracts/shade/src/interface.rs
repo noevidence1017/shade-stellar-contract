@@ -107,6 +107,9 @@ pub trait ShadeTrait {
         new_description: Option<String>,
     );
 
+    fn set_merchant_webhook(env: Env, merchant: Address, webhook: String);
+    fn get_merchant_webhook(env: Env, merchant_id: u64) -> String;
+
     fn set_merchant_accepted_tokens(env: Env, merchant: Address, tokens: Vec<Address>);
     fn get_merchant_accepted_tokens(env: Env, merchant: Address) -> Vec<Address>;
     fn remove_merchant_accepted_token(env: Env, merchant: Address, token: Address);
