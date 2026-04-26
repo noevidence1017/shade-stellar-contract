@@ -2,6 +2,7 @@ use crate::components::{
     access_control as access_control_component, admin as admin_component, core as core_component,
     invoice as invoice_component, merchant as merchant_component, pausable as pausable_component,
     subscription as subscription_component, upgrade as upgrade_component,
+    history as history_component,
 };
 use crate::errors::ContractError;
 use crate::events;
@@ -9,7 +10,7 @@ use crate::interface::ShadeTrait;
 use crate::types::{
     ContractInfo, CrossChainBridgePayload, DataKey, Invoice, InvoiceFilter, Merchant,
     MerchantAnalytics, MerchantAnalyticsSummary, MerchantFilter, OracleConfig, PendingFee, Role,
-    Subscription, SubscriptionPlan,
+    Subscription, SubscriptionPlan, Transaction
 };
 use soroban_sdk::{contract, contractimpl, panic_with_error, Address, BytesN, Env, String, Vec};
 
@@ -412,6 +413,10 @@ impl ShadeTrait for Shade {
         merchant_component::is_token_accepted_for_merchant(&env, &merchant, &token)
     }
 
+    fn get_user_transactions(env: Env, user: Address) -> Vec<Transaction> {
+        history_component::get_user_transactions(&env, user)
+    }
+    
     fn emit_cross_chain_bridge_placeholder(
         env: Env,
         caller: Address,

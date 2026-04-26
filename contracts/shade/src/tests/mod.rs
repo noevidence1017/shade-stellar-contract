@@ -1,4 +1,4 @@
-﻿pub mod test;
+pub mod test;
 pub mod test_accepted_tokens;
 pub mod test_access_control;
 pub mod test_account_factory;
@@ -32,4 +32,5 @@ pub mod test_shade_restriction;
 pub mod test_signatures;
 pub mod test_subscription;
 pub mod test_time_locked_fees;
+pub mod test_transaction_history;
 pub mod test_upgrade;
