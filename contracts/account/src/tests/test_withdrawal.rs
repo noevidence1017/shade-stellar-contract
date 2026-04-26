@@ -2,7 +2,7 @@
 
 use crate::account::MerchantAccount;
 use crate::account::MerchantAccountClient;
-use soroban_sdk::testutils::{Address as _, Events as _};
+use soroban_sdk::testutils::{Address as _, Events as _, Ledger as _};
 use soroban_sdk::{token, Address, Env};
 
 fn setup_initialized_account(env: &Env) -> (Address, MerchantAccountClient<'_>, Address) {
@@ -258,4 +258,32 @@ fn test_withdraw_to_emits_event() {
     // Verify events were emitted
     let events = env.events().all();
     assert!(!events.is_empty(), "Withdrawal event should be emitted");
+}
+
+/// Test Case 9: Withdrawal Analytics Aggregation
+/// Verify that withdrawal counts and amounts are tracked per token.
+#[test]
+fn test_withdraw_to_tracks_analytics() {
+    let env = Env::default();
+    env.mock_all_auths();
+    env.ledger().set_timestamp(1_000_000);
+
+    let (_contract_id, client, _merchant) = setup_initialized_account(&env);
+    let token = create_test_token(&env);
+
+    let token_client = token::StellarAssetClient::new(&env, &token);
+    let contract_address = _contract_id.clone();
+    token_client.mint(&contract_address, &10000);
+
+    let recipient1 = Address::generate(&env);
+    let recipient2 = Address::generate(&env);
+
+    client.withdraw_to(&token, &2500, &recipient1);
+    client.withdraw_to(&token, &1500, &recipient2);
+
+    let analytics = client.get_withdrawal_analytics(&token);
+    assert_eq!(analytics.token, token);
+    assert_eq!(analytics.total_withdrawn, 4000);
+    assert_eq!(analytics.withdrawal_count, 2);
+    assert_eq!(analytics.last_withdrawn_at, 1_000_000);
 }

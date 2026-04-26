@@ -8,6 +8,7 @@ pub enum DataKey {
     Restricted,
     AccountInfo,
     TrackedTokens,
+    WithdrawalAnalytics(Address),
 }
 
 #[contracttype]
@@ -24,4 +25,13 @@ pub struct AccountInfo {
 pub struct TokenBalance {
     pub token: Address,
     pub balance: i128,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct WithdrawalAnalytics {
+    pub token: Address,
+    pub total_withdrawn: i128,
+    pub withdrawal_count: u64,
+    pub last_withdrawn_at: u64,
 }

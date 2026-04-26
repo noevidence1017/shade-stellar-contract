@@ -5,7 +5,7 @@ use crate::events::{
     publish_withdrawal_to_event,
 };
 use crate::interface::MerchantAccountTrait;
-use crate::types::{AccountInfo, DataKey, TokenBalance};
+use crate::types::{AccountInfo, DataKey, TokenBalance, WithdrawalAnalytics};
 use soroban_sdk::{contract, contractimpl, panic_with_error, token, Address, Env, Vec};
 
 #[contract]
@@ -39,6 +39,18 @@ fn token_exists(tracked_tokens: &Vec<Address>, token: &Address) -> bool {
         }
     }
     false
+}
+
+fn load_withdrawal_analytics(env: &Env, token: &Address) -> WithdrawalAnalytics {
+    env.storage()
+        .persistent()
+        .get(&DataKey::WithdrawalAnalytics(token.clone()))
+        .unwrap_or(WithdrawalAnalytics {
+            token: token.clone(),
+            total_withdrawn: 0,
+            withdrawal_count: 0,
+            last_withdrawn_at: 0,
+        })
 }
 
 #[contractimpl]
@@ -131,6 +143,10 @@ impl MerchantAccountTrait for MerchantAccount {
         balances
     }
 
+    fn get_withdrawal_analytics(env: Env, token: Address) -> WithdrawalAnalytics {
+        load_withdrawal_analytics(&env, &token)
+    }
+
     fn verify_account(env: Env) {
         let manager = get_manager(&env);
         manager.require_auth();
@@ -173,6 +189,14 @@ impl MerchantAccountTrait for MerchantAccount {
         }
 
         token_client.transfer(&env.current_contract_address(), &recipient, &amount);
+
+        let mut analytics = load_withdrawal_analytics(&env, &token);
+        analytics.total_withdrawn += amount;
+        analytics.withdrawal_count += 1;
+        analytics.last_withdrawn_at = env.ledger().timestamp();
+        env.storage()
+            .persistent()
+            .set(&DataKey::WithdrawalAnalytics(token.clone()), &analytics);
 
         publish_withdrawal_to_event(&env, token, recipient, amount, env.ledger().timestamp());
     }
