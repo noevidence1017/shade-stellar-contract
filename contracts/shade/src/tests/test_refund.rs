@@ -360,7 +360,7 @@ fn test_partial_refund_with_fee() {
 
     // Partial refund of exactly the merchant portion
     env.ledger().set_timestamp(1_000 + 3_600);
-    client.refund_invoice_partial(&invoice_id, &merchant_portion);
+    client.refund_invoice_partial(&merchant, &invoice_id, &merchant_portion);
 
     let invoice = client.get_invoice(&invoice_id);
     assert_eq!(invoice.status, InvoiceStatus::PartiallyRefunded);

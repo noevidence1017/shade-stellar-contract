@@ -54,7 +54,7 @@ fn find_account_restricted_event(env: &Env, contract_id: &Address) -> Option<(bo
 fn test_default_state_is_not_restricted() {
     let (_env, client, _contract_id, _merchant, _manager) = setup_test();
 
-    assert_eq!(client.is_restricted_account(), false);
+    assert!(!client.is_restricted_account());
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn test_manager_can_restrict_account() {
     let (_env, client, _contract_id, _merchant, _manager) = setup_test();
 
     client.restrict_account(&true);
-    assert_eq!(client.is_restricted_account(), true);
+    assert!(client.is_restricted_account());
 }
 
 #[test]
@@ -70,10 +70,10 @@ fn test_manager_can_unrestrict_account() {
     let (_env, client, _contract_id, _merchant, _manager) = setup_test();
 
     client.restrict_account(&true);
-    assert_eq!(client.is_restricted_account(), true);
+    assert!(client.is_restricted_account());
 
     client.restrict_account(&false);
-    assert_eq!(client.is_restricted_account(), false);
+    assert!(!client.is_restricted_account());
 }
 
 #[test]
@@ -81,12 +81,12 @@ fn test_restriction_status_persists() {
     let (_env, client, _contract_id, _merchant, _manager) = setup_test();
 
     client.restrict_account(&true);
-    assert_eq!(client.is_restricted_account(), true);
-    assert_eq!(client.is_restricted_account(), true);
+    assert!(client.is_restricted_account());
+    assert!(client.is_restricted_account());
 
     client.restrict_account(&false);
-    assert_eq!(client.is_restricted_account(), false);
-    assert_eq!(client.is_restricted_account(), false);
+    assert!(!client.is_restricted_account());
+    assert!(!client.is_restricted_account());
 }
 
 #[test]
@@ -111,22 +111,22 @@ fn test_guest_cannot_restrict_account() {
 fn test_multiple_restriction_toggles() {
     let (_env, client, _contract_id, _merchant, _manager) = setup_test();
 
-    assert_eq!(client.is_restricted_account(), false);
+    assert!(!client.is_restricted_account());
 
     client.restrict_account(&true);
-    assert_eq!(client.is_restricted_account(), true);
+    assert!(client.is_restricted_account());
 
     client.restrict_account(&false);
-    assert_eq!(client.is_restricted_account(), false);
+    assert!(!client.is_restricted_account());
 
     client.restrict_account(&true);
-    assert_eq!(client.is_restricted_account(), true);
+    assert!(client.is_restricted_account());
 
     client.restrict_account(&true);
-    assert_eq!(client.is_restricted_account(), true);
+    assert!(client.is_restricted_account());
 
     client.restrict_account(&false);
-    assert_eq!(client.is_restricted_account(), false);
+    assert!(!client.is_restricted_account());
 }
 
 #[test]
@@ -137,11 +137,11 @@ fn test_restriction_emits_event_on_change() {
     let event1 = find_account_restricted_event(&env, &contract_id);
     assert!(event1.is_some());
     let (status1, _) = event1.unwrap();
-    assert_eq!(status1, true);
+    assert!(status1);
 
     client.restrict_account(&false);
     let event2 = find_account_restricted_event(&env, &contract_id);
     assert!(event2.is_some());
     let (status2, _) = event2.unwrap();
-    assert_eq!(status2, false);
+    assert!(!status2);
 }

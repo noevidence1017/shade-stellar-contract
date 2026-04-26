@@ -32,6 +32,7 @@ pub enum DataKey {
     PendingTokenFee(Address),
     // --- Fee discount system ---
     MerchantVolume(Address, Address),
+    UserTransactions(Address),
     MerchantAnalytics(Address, Address),
     MerchantAnalyticsSummary(Address),
     PlatformAccount,
@@ -57,6 +58,7 @@ pub struct Merchant {
     pub verified: bool,
     pub date_registered: u64,
     pub account: Address,
+    pub webhook: String,
 }
 
 #[contracttype]
@@ -246,4 +248,19 @@ pub struct TokenAnalytics {
     pub transaction_count: u64,
     pub unique_merchants: u64,
     pub last_updated: u64,
+pub enum TransactionType {
+    InvoicePayment = 0,
+    SubscriptionCharge = 1,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Transaction {
+    pub transaction_type: TransactionType,
+    pub ref_id: u64,
+    pub amount: i128,
+    pub token: Address,
+    pub description: soroban_sdk::String,
+    pub date: u64,
+    pub merchant_id: u64,
 }

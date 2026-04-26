@@ -2,6 +2,7 @@ use crate::types::{
     CrossChainBridgePayload, Invoice, InvoiceFilter, Merchant, MerchantAnalytics,
     MerchantAnalyticsSummary, MerchantFilter, OracleConfig, PendingFee, Role, Subscription,
     SubscriptionPlan, TokenAnalytics,
+    SubscriptionPlan,Transaction
 };
 use soroban_sdk::{contracttrait, Address, BytesN, Env, String, Vec};
 
@@ -78,7 +79,7 @@ pub trait ShadeTrait {
     fn revoke_role(env: Env, admin: Address, user: Address, role: Role);
     fn has_role(env: Env, user: Address, role: Role) -> bool;
     fn get_invoices(env: Env, filter: InvoiceFilter) -> Vec<Invoice>;
-    fn refund_invoice_partial(env: Env, invoice_id: u64, amount: i128);
+    fn refund_invoice_partial(env: Env, merchant: Address, invoice_id: u64, amount: i128);
     fn pause(env: Env, admin: Address);
     fn unpause(env: Env, admin: Address);
     fn is_paused(env: Env) -> bool;
@@ -106,6 +107,9 @@ pub trait ShadeTrait {
         new_amount: Option<i128>,
         new_description: Option<String>,
     );
+
+    fn set_merchant_webhook(env: Env, merchant: Address, webhook: String);
+    fn get_merchant_webhook(env: Env, merchant_id: u64) -> String;
 
     fn set_merchant_accepted_tokens(env: Env, merchant: Address, tokens: Vec<Address>);
     fn get_merchant_accepted_tokens(env: Env, merchant: Address) -> Vec<Address>;
@@ -153,6 +157,10 @@ pub trait ShadeTrait {
     /// Cancel a subscription. Either the customer or the merchant may call this.
     fn cancel_subscription(env: Env, caller: Address, subscription_id: u64);
 
+    /// Get all transactions executed by a specific customer address.
+    fn get_user_transactions(env: Env, user: Address) -> Vec<Transaction>;
+
+    // ── Cross-chain bridge placeholder ───────────────────────────────────────
     fn emit_cross_chain_bridge_placeholder(
         env: Env,
         caller: Address,

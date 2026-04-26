@@ -30,6 +30,7 @@ fn setup_test_with_payment() -> (Env, ShadeClient<'static>, Address, Address, Ad
     (env, shade_client, shade_contract_id, admin, token.address())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn assert_latest_paid_event(
     env: &Env,
     contract_id: &Address,

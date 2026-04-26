@@ -1,8 +1,8 @@
-use crate::components::{access_control, admin, merchant, signature_util};
+use crate::components::{access_control, admin, history, merchant, signature_util};
 use crate::errors::ContractError;
 use crate::events;
 use crate::types::{
-    DataKey, FiatPricing, Invoice, InvoiceFilter, InvoicePricingMode, InvoiceStatus, Role,
+    DataKey, FiatPricing, Invoice, InvoiceFilter, InvoicePricingMode, InvoiceStatus, Role, Transaction, TransactionType
 };
 use soroban_sdk::token::TokenClient;
 use soroban_sdk::{contractclient, panic_with_error, token, Address, BytesN, Env, String, Vec};
@@ -571,8 +571,14 @@ pub fn get_invoices(env: &Env, filter: InvoiceFilter) -> Vec<Invoice> {
 }
 //no new changes to add
 
-pub fn refund_invoice_partial(env: &Env, invoice_id: u64, amount: i128) {
+pub fn refund_invoice_partial(env: &Env, merchant_address: &Address, invoice_id: u64, amount: i128) {
+    merchant_address.require_auth();
     let mut invoice = get_invoice(env, invoice_id);
+
+    let merchant_id = merchant::get_merchant_id(env, merchant_address);
+    if invoice.merchant_id != merchant_id {
+        panic_with_error!(env, ContractError::NotAuthorized);
+    }
 
     if invoice.status != InvoiceStatus::Paid && invoice.status != InvoiceStatus::PartiallyRefunded {
         panic_with_error!(env, ContractError::InvalidInvoiceStatus);
@@ -628,7 +634,7 @@ pub fn refund_invoice_partial(env: &Env, invoice_id: u64, amount: i128) {
         events::publish_invoice_refunded_event(
             env,
             invoice_id,
-            payer,
+            merchant_address.clone(),
             invoice.amount,
             env.ledger().timestamp(),
         );
@@ -636,7 +642,7 @@ pub fn refund_invoice_partial(env: &Env, invoice_id: u64, amount: i128) {
         events::publish_invoice_partially_refunded_event(
             env,
             invoice_id,
-            payer,
+            merchant_address.clone(),
             amount,
             total_refund,
             env.ledger().timestamp(),
@@ -747,6 +753,17 @@ pub fn pay_invoice_partial(env: &Env, payer: &Address, invoice_id: u64, amount: 
         invoice.token.clone(),
         env.ledger().timestamp(),
     );
+
+    let transaction = Transaction {
+        transaction_type: TransactionType::InvoicePayment,
+        ref_id: invoice_id,
+        amount,
+        token: invoice.token.clone(),
+        description: invoice.description.clone(),
+        date: env.ledger().timestamp(),
+        merchant_id: invoice.merchant_id,
+    };
+    history::record_transaction(env, payer, transaction);
 
     fee_amount
 }

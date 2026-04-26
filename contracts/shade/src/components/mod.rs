@@ -8,4 +8,5 @@ pub mod pausable;
 pub mod reentrancy;
 pub mod signature_util;
 pub mod subscription;
+pub mod history;
 pub mod upgrade;

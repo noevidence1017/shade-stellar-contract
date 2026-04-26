@@ -4,7 +4,7 @@ use crate::components::core as core_component;
 use crate::errors::ContractError;
 use crate::events;
 use crate::types::{DataKey, Merchant, MerchantFilter, Role};
-use soroban_sdk::{contractclient, panic_with_error, Address, BytesN, Env, Vec};
+use soroban_sdk::{contractclient, panic_with_error, Address, BytesN, Env, String, Vec};
 
 #[contractclient(name = "MerchantAccountClient")]
 pub trait MerchantAccountContract {
@@ -37,6 +37,7 @@ pub fn register_merchant(env: &Env, merchant: &Address) {
         verified: false,
         date_registered: env.ledger().timestamp(),
         account: merchant.clone(),
+        webhook: String::from_str(env, ""),
     };
 
     env.storage()
@@ -394,6 +395,40 @@ pub fn get_merchant_accepted_tokens(env: &Env, merchant: &Address) -> Vec<Addres
         .persistent()
         .get(&DataKey::MerchantTokens(merchant.clone()))
         .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn set_merchant_webhook(env: &Env, merchant: &Address, webhook: &String) {
+    merchant.require_auth();
+
+    if !is_merchant(env, merchant) {
+        panic_with_error!(env, ContractError::MerchantNotFound);
+    }
+
+    let merchant_id = get_merchant_id(env, merchant);
+    let mut merchant_data: Merchant = env
+        .storage()
+        .persistent()
+        .get(&DataKey::Merchant(merchant_id))
+        .unwrap_or_else(|| panic_with_error!(env, ContractError::MerchantNotFound));
+
+    merchant_data.webhook = webhook.clone();
+
+    env.storage()
+        .persistent()
+        .set(&DataKey::Merchant(merchant_id), &merchant_data);
+
+    events::publish_merchant_webhook_set_event(
+        env,
+        merchant.clone(),
+        merchant_id,
+        webhook.clone(),
+        env.ledger().timestamp(),
+    );
+}
+
+pub fn get_merchant_webhook(env: &Env, merchant_id: u64) -> String {
+    let merchant_data = get_merchant(env, merchant_id);
+    merchant_data.webhook
 }
 
 pub fn is_token_accepted_for_merchant(env: &Env, merchant: &Address, token: &Address) -> bool {

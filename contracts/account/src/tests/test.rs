@@ -54,15 +54,15 @@ fn test_verify_account() {
     let merchant_id = 1;
     client.initialize(&merchant, &manager, &merchant_id);
 
-    assert_eq!(client.is_verified_account(), false);
+    assert!(!client.is_verified_account());
 
     client.verify_account();
     let events = env.events().all();
 
-    assert_eq!(client.is_verified_account(), true);
+    assert!(client.is_verified_account());
 
     assert!(
-        events.len() > 0,
+        !events.is_empty(),
         "No events captured immediately after verify_account!"
     );
     let (_event_contract_id, _topics, _data) = events.get(events.len() - 1).unwrap();
@@ -97,18 +97,18 @@ fn test_restrict_account() {
     let merchant_id = 1;
     client.initialize(&merchant, &manager, &merchant_id);
 
-    assert_eq!(client.is_restricted_account(), false);
+    assert!(!client.is_restricted_account());
 
     client.restrict_account(&true);
     let events = env.events().all();
 
-    assert_eq!(client.is_restricted_account(), true);
+    assert!(client.is_restricted_account());
 
     client.restrict_account(&false);
-    assert_eq!(client.is_restricted_account(), false);
+    assert!(!client.is_restricted_account());
 
     assert!(
-        events.len() > 0,
+        !events.is_empty(),
         "No events captured immediately after restrict_account!"
     );
 }

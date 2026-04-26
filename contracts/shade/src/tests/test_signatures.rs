@@ -69,6 +69,7 @@ fn build_test_message(
     result
 }
 
+#[allow(clippy::too_many_arguments)]
 fn sign_invoice(
     env: &Env,
     contract_id: &Address,

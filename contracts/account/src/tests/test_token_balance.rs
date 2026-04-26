@@ -180,7 +180,7 @@ fn test_refund_transfers_tokens_and_emits_event() {
     client.refund(&token, &refund_amount, &recipient);
 
     let events = env.events().all();
-    assert!(events.len() >= 1);
+    assert!(!events.is_empty());
 
     let expected_event = RefundProcessedEvent {
         token: token.clone(),

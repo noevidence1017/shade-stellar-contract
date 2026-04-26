@@ -65,6 +65,7 @@ fn generate_keypair() -> TestKeypair {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn sign_invoice(
     env: &Env,
     contract_id: &Address,

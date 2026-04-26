@@ -93,7 +93,7 @@ fn test_partial_refund_single_balance_and_status() {
     assert_eq!(merchant_balance_before, INVOICE_AMOUNT);
     assert_eq!(payer_balance_before, 0);
 
-    client.refund_invoice_partial(&invoice_id, &300);
+    client.refund_invoice_partial(&merchant, &invoice_id, &300);
 
     let invoice = client.get_invoice(&invoice_id);
     assert_eq!(invoice.status, InvoiceStatus::PartiallyRefunded);
@@ -126,12 +126,12 @@ fn test_partial_refund_multiple_accumulates() {
         1_000,
     );
 
-    client.refund_invoice_partial(&invoice_id, &200);
+    client.refund_invoice_partial(&merchant, &invoice_id, &200);
     let invoice = client.get_invoice(&invoice_id);
     assert_eq!(invoice.status, InvoiceStatus::PartiallyRefunded);
     assert_eq!(invoice.amount_refunded, 200);
 
-    client.refund_invoice_partial(&invoice_id, &400);
+    client.refund_invoice_partial(&merchant, &invoice_id, &400);
     let invoice = client.get_invoice(&invoice_id);
     assert_eq!(invoice.status, InvoiceStatus::PartiallyRefunded);
     assert_eq!(invoice.amount_refunded, 600);
@@ -161,9 +161,9 @@ fn test_partial_refund_full_via_partial_transitions_to_refunded() {
         1_000,
     );
 
-    client.refund_invoice_partial(&invoice_id, &300);
-    client.refund_invoice_partial(&invoice_id, &300);
-    client.refund_invoice_partial(&invoice_id, &400);
+    client.refund_invoice_partial(&merchant, &invoice_id, &300);
+    client.refund_invoice_partial(&merchant, &invoice_id, &300);
+    client.refund_invoice_partial(&merchant, &invoice_id, &400);
 
     let invoice = client.get_invoice(&invoice_id);
     assert_eq!(invoice.status, InvoiceStatus::Refunded);
@@ -195,8 +195,8 @@ fn test_partial_refund_over_refund_panics() {
         1_000,
     );
 
-    client.refund_invoice_partial(&invoice_id, &600);
-    client.refund_invoice_partial(&invoice_id, &500);
+    client.refund_invoice_partial(&merchant, &invoice_id, &600);
+    client.refund_invoice_partial(&merchant, &invoice_id, &500);
 }
 
 #[test]
@@ -223,7 +223,7 @@ fn test_partial_refund_fails_after_seven_days() {
 
     env.ledger()
         .set_timestamp(date_paid + REFUND_WINDOW_SECS + 1);
-    client.refund_invoice_partial(&invoice_id, &300);
+    client.refund_invoice_partial(&merchant, &invoice_id, &300);
 }
 
 #[test]
@@ -247,7 +247,7 @@ fn test_partial_refund_zero_amount_panics() {
         1_000,
     );
 
-    client.refund_invoice_partial(&invoice_id, &0);
+    client.refund_invoice_partial(&merchant, &invoice_id, &0);
 }
 
 #[test]
@@ -271,5 +271,5 @@ fn test_partial_refund_negative_amount_panics() {
         1_000,
     );
 
-    client.refund_invoice_partial(&invoice_id, &-100);
+    client.refund_invoice_partial(&merchant, &invoice_id, &-100);
 }

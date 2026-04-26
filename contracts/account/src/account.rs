@@ -162,7 +162,7 @@ impl MerchantAccountTrait for MerchantAccount {
 
     fn withdraw_to(env: Env, token: Address, amount: i128, recipient: Address) {
         // Only the merchant can initiate withdrawals to another account
-        let merchant = get_manager(&env);
+        let merchant = Self::get_merchant(env.clone());
         merchant.require_auth();
 
         let token_client = token::TokenClient::new(&env, &token);
@@ -172,8 +172,19 @@ impl MerchantAccountTrait for MerchantAccount {
             panic_with_error!(&env, ContractError::InsufficientBalance);
         }
 
+        if is_restricted_account(&env) {
+            panic_with_error!(&env, ContractError::AccountRestricted);
+        }
+
         token_client.transfer(&env.current_contract_address(), &recipient, &amount);
 
-        publish_withdrawal_to_event(&env, token, recipient, amount, env.ledger().timestamp());
+        publish_withdrawal_to_event(
+            &env,
+            token,
+            merchant,
+            recipient,
+            amount,
+            env.ledger().timestamp(),
+        );
     }
 }
