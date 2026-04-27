@@ -10,7 +10,8 @@ use crate::interface::ShadeTrait;
 use crate::types::{
     ContractInfo, CrossChainBridgePayload, DataKey, Event, Invoice, InvoiceFilter, Merchant,
     MerchantAnalytics, MerchantAnalyticsSummary, MerchantFilter, OracleConfig, PaymentPayload,
-    PaymentRoute, PendingFee, Role, Subscription, SubscriptionPlan, SwapRoute, Transaction
+    PaymentRoute, PendingFee, Role, Subscription, SubscriptionPlan, SwapRoute, TokenAnalytics,
+    Transaction
 };
 use soroban_sdk::{contract, contractimpl, panic_with_error, Address, BytesN, Env, String, Vec};
 
@@ -465,5 +466,25 @@ impl ShadeTrait for Shade {
 
     fn get_event(env: Env, event_id: u64) -> Event {
         crate::components::event::get_event(&env, &event_id)
+    }
+
+    fn get_token_analytics(env: Env, token: Address) -> TokenAnalytics {
+        admin_component::get_token_analytics(&env, &token)
+    }
+
+    fn get_token_volume(env: Env, token: Address) -> i128 {
+        admin_component::get_token_volume(&env, &token)
+    }
+
+    fn get_token_dominance_metrics(env: Env, tokens: Vec<Address>) -> Vec<(Address, i128)> {
+        admin_component::get_token_dominance_metrics(&env, &tokens)
+    }
+
+    fn get_top_tokens_by_volume(env: Env, limit: u32) -> Vec<(Address, i128)> {
+        admin_component::get_top_tokens_by_volume(&env, limit)
+    }
+
+    fn get_token_market_share(env: Env, token: Address) -> i128 {
+        admin_component::get_token_market_share(&env, &token)
     }
 }

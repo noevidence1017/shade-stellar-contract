@@ -2,7 +2,7 @@ use crate::components::{core, reentrancy};
 use crate::errors::ContractError;
 use crate::events;
 use crate::types::{
-    DataKey, MerchantAnalytics, MerchantAnalyticsSummary, OracleConfig, PendingFee,
+    DataKey, MerchantAnalytics, MerchantAnalyticsSummary, OracleConfig, PendingFee, TokenAnalytics,
 };
 use soroban_sdk::{panic_with_error, token, Address, Env, Vec};
 
@@ -263,6 +263,106 @@ pub fn record_merchant_payment(
         &DataKey::MerchantAnalyticsSummary(merchant.clone()),
         &summary,
     );
+
+    // Update global token analytics
+    record_token_payment(env, token, volume_amount, fee_amount);
+}
+
+pub fn get_token_analytics(env: &Env, token: &Address) -> TokenAnalytics {
+    env.storage()
+        .persistent()
+        .get(&DataKey::TokenAnalytics(token.clone()))
+        .unwrap_or(TokenAnalytics {
+            token: token.clone(),
+            total_volume: 0,
+            total_fees: 0,
+            transaction_count: 0,
+            unique_merchants: 0,
+            last_updated: 0,
+        })
+}
+
+pub fn get_token_volume(env: &Env, token: &Address) -> i128 {
+    env.storage()
+        .persistent()
+        .get(&DataKey::TokenVolume(token.clone()))
+        .unwrap_or(0)
+}
+
+fn record_token_payment(env: &Env, token: &Address, volume_amount: i128, fee_amount: i128) {
+    let mut analytics = get_token_analytics(env, token);
+    
+    // Check if this is a new merchant for this token
+    let current_volume = get_token_volume(env, token);
+    let is_new_merchant = current_volume == 0;
+    
+    analytics.total_volume += volume_amount;
+    analytics.total_fees += fee_amount;
+    analytics.transaction_count += 1;
+    if is_new_merchant {
+        analytics.unique_merchants += 1;
+    }
+    analytics.last_updated = env.ledger().timestamp();
+
+    env.storage().persistent().set(
+        &DataKey::TokenAnalytics(token.clone()),
+        &analytics,
+    );
+    
+    env.storage().persistent().set(
+        &DataKey::TokenVolume(token.clone()),
+        &analytics.total_volume,
+    );
+}
+
+pub fn get_token_dominance_metrics(env: &Env, tokens: &Vec<Address>) -> Vec<(Address, i128)> {
+    let mut token_volumes: Vec<(Address, i128)> = Vec::new(env);
+    let mut total_volume: i128 = 0;
+    
+    // Calculate total volume across all tokens
+    for token in tokens.iter() {
+        let volume = get_token_volume(env, token);
+        total_volume += volume;
+        token_volumes.push_back((token.clone(), volume));
+    }
+    
+    // Sort by volume in descending order
+    token_volumes.sort_by(|a, b| b.1.cmp(&a.1));
+    
+    token_volumes
+}
+
+pub fn get_top_tokens_by_volume(env: &Env, limit: u32) -> Vec<(Address, i128)> {
+    let accepted_tokens = crate::components::admin::get_accepted_tokens(env);
+    let mut all_metrics = get_token_dominance_metrics(env, &accepted_tokens);
+    
+    // Truncate to specified limit
+    while all_metrics.len() > limit {
+        all_metrics.pop_back();
+    }
+    
+    all_metrics
+}
+
+pub fn get_token_market_share(env: &Env, token: &Address) -> i128 {
+    let token_volume = get_token_volume(env, token);
+    if token_volume == 0 {
+        return 0;
+    }
+    
+    let accepted_tokens = crate::components::admin::get_accepted_tokens(env);
+    let mut total_volume: i128 = 0;
+    
+    for t in accepted_tokens.iter() {
+        total_volume += get_token_volume(env, t);
+    }
+    
+    if total_volume == 0 {
+        return 0;
+    }
+    
+    // Return market share as basis points (10000 = 100%)
+    (token_volume * 10000) / total_volume
 }
 
 fn apply_volume_discount(fee_bps: i128, volume: i128) -> i128 {
