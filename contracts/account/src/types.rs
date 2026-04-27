@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address};
+use soroban_sdk::{contracttype, Address, Vec};
 
 #[contracttype]
 pub enum DataKey {
@@ -9,6 +9,9 @@ pub enum DataKey {
     AccountInfo,
     TrackedTokens,
     WithdrawalAnalytics(Address),
+    Threshold,
+    WithdrawalRequest(u64),
+    WithdrawalCount,
 }
 
 #[contracttype]
@@ -34,4 +37,24 @@ pub struct WithdrawalAnalytics {
     pub total_withdrawn: i128,
     pub withdrawal_count: u64,
     pub last_withdrawn_at: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct WithdrawalRequest {
+    pub id: u64,
+    pub token: Address,
+    pub amount: i128,
+    pub recipient: Address,
+    pub approvals: Vec<Address>,
+    pub status: WithdrawalStatus,
+}
+
+#[contracttype]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
+pub enum WithdrawalStatus {
+    Pending = 0,
+    Approved = 1,
+    Executed = 2,
 }

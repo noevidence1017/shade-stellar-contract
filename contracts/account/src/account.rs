@@ -5,7 +5,9 @@ use crate::events::{
     publish_withdrawal_to_event,
 };
 use crate::interface::MerchantAccountTrait;
-use crate::types::{AccountInfo, DataKey, TokenBalance, WithdrawalAnalytics};
+use crate::types::{
+    AccountInfo, DataKey, TokenBalance, WithdrawalAnalytics, WithdrawalRequest, WithdrawalStatus,
+};
 use soroban_sdk::{contract, contractimpl, panic_with_error, token, Address, Env, Vec};
 
 #[contract]
@@ -177,24 +179,116 @@ impl MerchantAccountTrait for MerchantAccount {
     }
 
     fn withdraw_to(env: Env, token: Address, amount: i128, recipient: Address) {
-        // Only the merchant can initiate withdrawals to another account
         let merchant = Self::get_merchant(env.clone());
         merchant.require_auth();
-
-        let token_client = token::TokenClient::new(&env, &token);
-        let current_balance = token_client.balance(&env.current_contract_address());
-
-        if amount > current_balance {
-            panic_with_error!(&env, ContractError::InsufficientBalance);
-        }
 
         if is_restricted_account(&env) {
             panic_with_error!(&env, ContractError::AccountRestricted);
         }
 
-        token_client.transfer(&env.current_contract_address(), &recipient, &amount);
+        let threshold = self.get_withdrawal_threshold(env.clone());
+        if threshold > 0 && amount > threshold {
+            let id = env
+                .storage()
+                .persistent()
+                .get(&DataKey::WithdrawalCount)
+                .unwrap_or(0u64)
+                + 1;
 
-        let mut analytics = load_withdrawal_analytics(&env, &token);
+            let mut approvals = Vec::new(&env);
+            approvals.push_back(merchant.clone());
+
+            let request = WithdrawalRequest {
+                id,
+                token: token.clone(),
+                amount,
+                recipient: recipient.clone(),
+                approvals,
+                status: WithdrawalStatus::Pending,
+            };
+
+            env.storage()
+                .persistent()
+                .set(&DataKey::WithdrawalRequest(id), &request);
+            env.storage().persistent().set(&DataKey::WithdrawalCount, &id);
+            return;
+        }
+
+        self.execute_withdrawal(&env, &token, amount, &recipient);
+    }
+
+    fn set_withdrawal_threshold(env: Env, threshold: i128) {
+        let manager = get_manager(&env);
+        manager.require_auth();
+        env.storage().persistent().set(&DataKey::Threshold, &threshold);
+    }
+
+    fn get_withdrawal_threshold(env: Env) -> i128 {
+        env.storage().persistent().get(&DataKey::Threshold).unwrap_or(0)
+    }
+
+    fn approve_withdrawal(env: Env, request_id: u64) {
+        let manager = get_manager(&env);
+        manager.require_auth();
+
+        let mut request: WithdrawalRequest = env
+            .storage()
+            .persistent()
+            .get(&DataKey::WithdrawalRequest(request_id))
+            .unwrap_or_else(|| panic_with_error!(&env, ContractError::InvoiceNotFound));
+
+        if request.status != WithdrawalStatus::Pending {
+            panic_with_error!(&env, ContractError::InvalidInvoiceStatus);
+        }
+
+        // Add manager approval
+        let mut already_approved = false;
+        for app in request.approvals.iter() {
+            if app == manager {
+                already_approved = true;
+                break;
+            }
+        }
+
+        if !already_approved {
+            request.approvals.push_back(manager.clone());
+        }
+
+        // If we have 2 approvals (merchant initiated + manager approved), execute
+        if request.approvals.len() >= 2 {
+            request.status = WithdrawalStatus::Executed;
+            Self::execute_withdrawal_internal(&env, &request.token, request.amount, &request.recipient);
+        }
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::WithdrawalRequest(request_id), &request);
+    }
+
+    fn get_withdrawal_request(env: Env, request_id: u64) -> WithdrawalRequest {
+        env.storage()
+            .persistent()
+            .get(&DataKey::WithdrawalRequest(request_id))
+            .unwrap()
+    }
+}
+
+impl MerchantAccount {
+    fn execute_withdrawal(env: &Env, token: &Address, amount: i128, recipient: &Address) {
+        Self::execute_withdrawal_internal(env, token, amount, recipient);
+    }
+
+    fn execute_withdrawal_internal(env: &Env, token: &Address, amount: i128, recipient: &Address) {
+        let token_client = token::TokenClient::new(env, token);
+        let current_balance = token_client.balance(&env.current_contract_address());
+
+        if amount > current_balance {
+            panic_with_error!(env, ContractError::InsufficientBalance);
+        }
+
+        token_client.transfer(&env.current_contract_address(), recipient, &amount);
+
+        let mut analytics = load_withdrawal_analytics(env, token);
         analytics.total_withdrawn += amount;
         analytics.withdrawal_count += 1;
         analytics.last_withdrawn_at = env.ledger().timestamp();
@@ -203,10 +297,10 @@ impl MerchantAccountTrait for MerchantAccount {
             .set(&DataKey::WithdrawalAnalytics(token.clone()), &analytics);
 
         publish_withdrawal_to_event(
-            &env,
-            token,
-            merchant,
-            recipient,
+            env,
+            token.clone(),
+            Self::get_merchant(env.clone()),
+            recipient.clone(),
             amount,
             env.ledger().timestamp(),
         );

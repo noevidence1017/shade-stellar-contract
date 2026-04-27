@@ -1,7 +1,7 @@
 use crate::types::{
-    CrossChainBridgePayload, Invoice, InvoiceFilter, Merchant, MerchantAnalytics,
+    CrossChainBridgePayload, Event, Invoice, InvoiceFilter, Merchant, MerchantAnalytics,
     MerchantAnalyticsSummary, MerchantFilter, OracleConfig, PendingFee, Role, Subscription,
-    SubscriptionPlan,Transaction
+    SubscriptionPlan, Transaction
 };
 use soroban_sdk::{contracttrait, Address, BytesN, Env, String, Vec};
 
@@ -161,9 +161,21 @@ pub trait ShadeTrait {
     fn get_user_transactions(env: Env, user: Address) -> Vec<Transaction>;
 
     // ── Cross-chain bridge placeholder ───────────────────────────────────────
-    fn emit_cross_chain_bridge_placeholder(
+    fn emit_bridge_placeholder(
         env: Env,
         caller: Address,
         payload: CrossChainBridgePayload,
     );
+
+    // --- Event system ---
+    fn create_event(
+        env: Env,
+        merchant: Address,
+        name: String,
+        ticket_price: i128,
+        token: Address,
+        capacity: u32,
+    ) -> u64;
+    fn purchase_ticket(env: Env, event_id: u64, buyer: Address);
+    fn get_event(env: Env, event_id: u64) -> Event;
 }

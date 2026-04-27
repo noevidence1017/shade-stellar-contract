@@ -16,4 +16,8 @@ pub trait MerchantAccountTrait {
     fn restrict_account(env: Env, status: bool);
     fn is_restricted_account(env: Env) -> bool;
     fn withdraw_to(env: Env, token: Address, amount: i128, recipient: Address);
+    fn set_withdrawal_threshold(env: Env, threshold: i128);
+    fn get_withdrawal_threshold(env: Env) -> i128;
+    fn approve_withdrawal(env: Env, request_id: u64);
+    fn get_withdrawal_request(env: Env, request_id: u64) -> crate::types::WithdrawalRequest;
 }

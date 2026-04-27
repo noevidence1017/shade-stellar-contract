@@ -8,9 +8,9 @@ use crate::errors::ContractError;
 use crate::events;
 use crate::interface::ShadeTrait;
 use crate::types::{
-    ContractInfo, CrossChainBridgePayload, DataKey, Invoice, InvoiceFilter, Merchant,
-    MerchantAnalytics, MerchantAnalyticsSummary, MerchantFilter, OracleConfig, PendingFee, Role,
-    Subscription, SubscriptionPlan, Transaction
+    ContractInfo, CrossChainBridgePayload, DataKey, Event, Invoice, InvoiceFilter, Merchant,
+    MerchantAnalytics, MerchantAnalyticsSummary, MerchantFilter, OracleConfig, PaymentPayload,
+    PaymentRoute, PendingFee, Role, Subscription, SubscriptionPlan, SwapRoute, Transaction
 };
 use soroban_sdk::{contract, contractimpl, panic_with_error, Address, BytesN, Env, String, Vec};
 
@@ -430,18 +430,40 @@ impl ShadeTrait for Shade {
         history_component::get_user_transactions(&env, user)
     }
     
-    fn emit_cross_chain_bridge_placeholder(
+    fn emit_bridge_placeholder(
         env: Env,
         caller: Address,
         payload: CrossChainBridgePayload,
     ) {
         pausable_component::assert_not_paused(&env);
         caller.require_auth();
-        events::publish_cross_chain_bridge_placeholder_event(
+        events::publish_bridge_placeholder_event(
             &env,
             caller,
             payload,
             env.ledger().timestamp(),
         );
+    }
+
+    // --- Event system ---
+    fn create_event(
+        env: Env,
+        merchant: Address,
+        name: String,
+        ticket_price: i128,
+        token: Address,
+        capacity: u32,
+    ) -> u64 {
+        pausable_component::assert_not_paused(&env);
+        crate::components::event::create_event(&env, &merchant, &name, &ticket_price, &token, &capacity)
+    }
+
+    fn purchase_ticket(env: Env, event_id: u64, buyer: Address) {
+        pausable_component::assert_not_paused(&env);
+        crate::components::event::purchase_ticket(&env, &event_id, &buyer);
+    }
+
+    fn get_event(env: Env, event_id: u64) -> Event {
+        crate::components::event::get_event(&env, &event_id)
     }
 }

@@ -617,19 +617,19 @@ pub fn publish_nonce_invalidated_event(
 }
 
 #[contractevent]
-pub struct CrossChainBridgePlaceholderEvent {
+pub struct BridgePlaceholderEvent {
     pub caller: Address,
     pub payload: crate::types::CrossChainBridgePayload,
     pub timestamp: u64,
 }
 
-pub fn publish_cross_chain_bridge_placeholder_event(
+pub fn publish_bridge_placeholder_event(
     env: &Env,
     caller: Address,
     payload: crate::types::CrossChainBridgePayload,
     timestamp: u64,
 ) {
-    CrossChainBridgePlaceholderEvent {
+    BridgePlaceholderEvent {
         caller,
         payload,
         timestamp,

@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, BytesN, String};
+use soroban_sdk::{contracttype, Address, BytesN, String, Vec};
 
 #[contracttype]
 pub enum DataKey {
@@ -37,6 +37,9 @@ pub enum DataKey {
     MerchantAnalyticsSummary(Address),
     PlatformAccount,
     TokenOracle(Address),
+    // --- Event system ---
+    Event(u64),
+    EventCount,
 }
 
 #[contracttype]
@@ -254,4 +257,40 @@ pub struct Transaction {
     pub description: soroban_sdk::String,
     pub date: u64,
     pub merchant_id: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Event {
+    pub id: u64,
+    pub merchant_id: u64,
+    pub name: String,
+    pub ticket_price: i128,
+    pub token: Address,
+    pub capacity: u32,
+    pub sold: u32,
+    pub date: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PaymentRoute {
+    Direct,
+    Swap(SwapRoute),
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SwapRoute {
+    pub router: Address,
+    pub path: Vec<Address>,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PaymentPayload {
+    pub input_token: Address,
+    pub settlement_token: Address,
+    pub route: PaymentRoute,
+    pub max_slippage_bps: Option<u32>,
 }

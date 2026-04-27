@@ -36,3 +36,5 @@ pub mod test_subscription;
 pub mod test_time_locked_fees;
 pub mod test_transaction_history;
 pub mod test_upgrade;
+pub mod test_fiat_pricing;
+pub mod test_event_tickets;
