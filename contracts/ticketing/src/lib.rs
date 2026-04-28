@@ -1,9 +1,11 @@
 #![no_std]
 
 mod errors;
+#[cfg(test)]
+mod test_integration;
 
 use crate::errors::TicketingError;
-use soroban_sdk::{contract, contractimpl, contracttype, panic_with_error, Address, BytesN, Env, String, Vec};
+use soroban_sdk::{contract, contractevent, contractimpl, contracttype, panic_with_error, Address, BytesN, Env, String, Vec};
 
 const HASH_LENGTH: usize = 32;
 

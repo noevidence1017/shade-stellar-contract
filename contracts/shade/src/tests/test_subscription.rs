@@ -125,7 +125,7 @@ fn test_successful_charge() {
     let merchant_portion = 1_000 - fee; // 950
 
     assert_eq!(tok.balance(&ctx.merchant_account_id), merchant_portion);
-    assert_eq!(tok.balance(&ctx.shade_id), fee);
+    assert_eq!(tok.balance(&ctx.admin), fee);
     assert_eq!(tok.balance(&customer), 10_000 - 1_000);
 
     // Verify last_charged updated
@@ -179,7 +179,7 @@ fn test_charge_after_interval() {
     assert_eq!(tok.balance(&customer), 10_000 - 2_000);
 
     let fee = 1_000 * 500 / 10_000; // 50 per charge
-    assert_eq!(tok.balance(&ctx.shade_id), fee * 2);
+    assert_eq!(tok.balance(&ctx.admin), fee * 2);
     assert_eq!(tok.balance(&ctx.merchant_account_id), (1_000 - fee) * 2);
 }
 
@@ -316,7 +316,7 @@ fn test_multi_cycle_charges() {
     assert_eq!(tok.balance(&customer), 10_000 - 3_000);
 
     let fee_per_charge = 1_000 * 500 / 10_000; // 50
-    assert_eq!(tok.balance(&ctx.shade_id), fee_per_charge * 3);
+    assert_eq!(tok.balance(&ctx.admin), fee_per_charge * 3);
     assert_eq!(
         tok.balance(&ctx.merchant_account_id),
         (1_000 - fee_per_charge) * 3

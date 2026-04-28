@@ -1,7 +1,7 @@
 use crate::types::{
     CrossChainBridgePayload, Event, Invoice, InvoiceFilter, Merchant, MerchantAnalytics,
-    MerchantAnalyticsSummary, MerchantFilter, OracleConfig, PendingFee, Role, Subscription,
-    SubscriptionPlan, TokenAnalytics, Transaction
+    MerchantAnalyticsSummary, MerchantFilter, OracleConfig, PaymentPayload, PendingFee, Role,
+    Subscription, SubscriptionPlan, TokenAnalytics, Transaction,
 };
 use soroban_sdk::{contracttrait, Address, BytesN, Env, String, Vec};
 
@@ -156,6 +156,10 @@ pub trait ShadeTrait {
 
     /// Cancel a subscription. Either the customer or the merchant may call this.
     fn cancel_subscription(env: Env, caller: Address, subscription_id: u64);
+
+    /// Deactivate a subscription plan so that no new customers can enroll.
+    /// Only the merchant who owns the plan may call this.
+    fn deactivate_plan(env: Env, caller: Address, plan_id: u64);
 
     /// Get all transactions executed by a specific customer address.
     fn get_user_transactions(env: Env, user: Address) -> Vec<Transaction>;

@@ -2,7 +2,8 @@ use crate::components::{access_control, admin, history, merchant, signature_util
 use crate::errors::ContractError;
 use crate::events;
 use crate::types::{
-    DataKey, FiatPricing, Invoice, InvoiceFilter, InvoicePricingMode, InvoiceStatus, Role, Transaction, TransactionType
+    DataKey, FiatPricing, FiatPricingData, Invoice, InvoiceFilter, InvoicePricingMode,
+    InvoiceStatus, Role, Transaction, TransactionType,
 };
 use soroban_sdk::token::TokenClient;
 use soroban_sdk::{contractclient, panic_with_error, token, Address, BytesN, Env, String, Vec};
@@ -28,10 +29,10 @@ fn scale_factor(decimals: u32) -> i128 {
 }
 
 fn resolve_fiat_invoice_amount(env: &Env, invoice: &Invoice) -> i128 {
-    let fiat_pricing = invoice
-        .fiat_pricing
-        .clone()
-        .unwrap_or_else(|| panic_with_error!(env, ContractError::OraclePriceUnavailable));
+    let fiat_pricing = match invoice.fiat_pricing.clone() {
+        FiatPricingData::Some(fp) => fp,
+        FiatPricingData::None => panic_with_error!(env, ContractError::OraclePriceUnavailable),
+    };
     let oracle_config = admin::get_token_oracle(env, &invoice.token);
     let oracle_client = PriceOracleClient::new(env, &oracle_config.contract);
     let price = oracle_client.get_price(&invoice.token, &fiat_pricing.currency);
@@ -160,7 +161,7 @@ pub fn create_invoice(
         amount_refunded: 0,
         expires_at,
         pricing_mode: InvoicePricingMode::FixedCrypto,
-        fiat_pricing: None,
+        fiat_pricing: FiatPricingData::None,
     };
     env.storage()
         .persistent()
@@ -208,7 +209,7 @@ pub fn create_fiat_invoice(
         amount_refunded: 0,
         expires_at,
         pricing_mode: InvoicePricingMode::FixedFiat,
-        fiat_pricing: Some(FiatPricing {
+        fiat_pricing: FiatPricingData::Some(FiatPricing {
             currency: fiat_currency.clone(),
             amount: fiat_amount,
             decimals: fiat_decimals,
@@ -299,7 +300,7 @@ pub fn create_invoice_draft(
         amount_refunded: 0,
         expires_at,
         pricing_mode: InvoicePricingMode::FixedCrypto,
-        fiat_pricing: None,
+        fiat_pricing: FiatPricingData::None,
     };
     env.storage()
         .persistent()
@@ -399,7 +400,7 @@ pub fn create_invoice_signed(
         amount_refunded: 0,
         expires_at: None,
         pricing_mode: InvoicePricingMode::FixedCrypto,
-        fiat_pricing: None,
+        fiat_pricing: FiatPricingData::None,
     };
 
     env.storage()

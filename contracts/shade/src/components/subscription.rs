@@ -94,6 +94,7 @@ pub fn get_subscription_plan(env: &Env, plan_id: u64) -> SubscriptionPlan {
 pub fn subscribe(env: &Env, customer: Address, plan_id: u64) -> u64 {
     // TODO: determine if a customer is allowed to subscribe more than once to the same plan
     // and if so, create a storage for saving the subcription ids of a plan in a list
+    customer.require_auth();
     let plan = get_subscription_plan(env, plan_id);
     if !plan.active {
         panic_with_error!(env, ContractError::PlanNotActive);

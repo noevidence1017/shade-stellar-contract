@@ -318,23 +318,36 @@ fn record_token_payment(env: &Env, token: &Address, volume_amount: i128, fee_amo
 }
 
 pub fn get_token_dominance_metrics(env: &Env, tokens: &Vec<Address>) -> Vec<(Address, i128)> {
-    let mut token_volumes_native: std::vec::Vec<(Address, i128)> = std::vec::Vec::new();
-    
-    // Calculate total volume across all tokens
+    // Collect (address, volume) pairs
+    let mut unsorted: Vec<(Address, i128)> = Vec::new(env);
     for token in tokens.iter() {
         let volume = get_token_volume(env, &token);
-        token_volumes_native.push((token, volume));
+        unsorted.push_back((token, volume));
     }
-    
-    // Sort by volume in descending order
-    token_volumes_native.sort_by(|a, b| b.1.cmp(&a.1));
-    
-    let mut result = Vec::new(env);
-    for item in token_volumes_native {
-        result.push_back(item);
+
+    // Insertion sort (descending by volume) — no alloc/std required
+    let mut sorted: Vec<(Address, i128)> = Vec::new(env);
+    for i in 0..unsorted.len() {
+        let item = unsorted.get(i).unwrap();
+        let mut pos = sorted.len();
+        for j in 0..sorted.len() {
+            if sorted.get(j).unwrap().1 < item.1 {
+                pos = j;
+                break;
+            }
+        }
+        let mut new_sorted: Vec<(Address, i128)> = Vec::new(env);
+        for k in 0..pos {
+            new_sorted.push_back(sorted.get(k).unwrap());
+        }
+        new_sorted.push_back(item);
+        for k in pos..sorted.len() {
+            new_sorted.push_back(sorted.get(k).unwrap());
+        }
+        sorted = new_sorted;
     }
-    
-    result
+
+    sorted
 }
 
 pub fn get_top_tokens_by_volume(env: &Env, limit: u32) -> Vec<(Address, i128)> {

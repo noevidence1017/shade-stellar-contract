@@ -65,25 +65,6 @@ pub struct Merchant {
 }
 
 #[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Invoice {
-    pub id: u64,
-    pub description: soroban_sdk::String,
-    pub amount: i128,
-    pub token: Address,
-    pub status: InvoiceStatus,
-    pub merchant_id: u64,
-    pub payer: Option<Address>,
-    pub date_created: u64,
-    pub date_paid: Option<u64>,
-    pub amount_paid: i128,
-    pub amount_refunded: i128,
-    pub expires_at: Option<u64>,
-    pub pricing_mode: InvoicePricingMode,
-    pub fiat_pricing: Option<FiatPricing>,
-}
-
-#[contracttype]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(u32)]
 pub enum InvoiceStatus {
@@ -110,6 +91,37 @@ pub struct FiatPricing {
     pub currency: String,
     pub amount: i128,
     pub decimals: u32,
+}
+
+/// Soroban-compatible optional wrapper for FiatPricing.
+/// `Option<FiatPricing>` cannot be used directly inside a `#[contracttype]`
+/// struct because the SDK does not implement the required XDR conversions for
+/// `Option<T>` where T is a user-defined struct. An explicit enum variant is
+/// the idiomatic workaround.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum FiatPricingData {
+    None,
+    Some(FiatPricing),
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Invoice {
+    pub id: u64,
+    pub description: soroban_sdk::String,
+    pub amount: i128,
+    pub token: Address,
+    pub status: InvoiceStatus,
+    pub merchant_id: u64,
+    pub payer: Option<Address>,
+    pub date_created: u64,
+    pub date_paid: Option<u64>,
+    pub amount_paid: i128,
+    pub amount_refunded: i128,
+    pub expires_at: Option<u64>,
+    pub pricing_mode: InvoicePricingMode,
+    pub fiat_pricing: FiatPricingData,
 }
 
 #[contracttype]
